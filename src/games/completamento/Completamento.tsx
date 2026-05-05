@@ -23,7 +23,7 @@ export default function Completamento() {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [players, setPlayers] = useState<CompletamentoPlayer[]>([])
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0)
-  const [revealedCount, setRevealedCount] = useState(0)
+  const [revealedIndexes, setRevealedIndexes] = useState<number[]>([])
   const [timerRunning, setTimerRunning] = useState(false)
   const [feedback, setFeedback] = useState<'correct' | 'skip' | null>(null)
   const [paused, setPaused] = useState(false)
@@ -39,7 +39,7 @@ export default function Completamento() {
     })))
     setCurrentPlayerIdx(0)
     setQuestionIndex(0)
-    setRevealedCount(0)
+    setRevealedIndexes([])
     setTimerRunning(true)
     setPaused(false)
     setPhase('playing')
@@ -47,12 +47,21 @@ export default function Completamento() {
 
   const activePlayer = players[currentPlayerIdx]
 
-  const getMaskedWord = useCallback((word: string, revealed: number) => {
+  const getRevealableIndexes = useCallback((word: string) => {
+    return word
+      .split('')
+      .map((ch, i) => ({ ch, i }))
+      .filter(({ ch, i }) => ch !== ' ' && i !== word.length - 1)
+      .map(({ i }) => i)
+  }, [])
+
+  const getMaskedWord = useCallback((word: string, revealed: number[]) => {
+    const revealedSet = new Set(revealed)
     const letters = word.split('')
     return letters.map((ch, i) => {
       if (ch === ' ') return ' '
       if (i === letters.length - 1) return '_' // last letter never revealed
-      if (i < revealed) return ch
+      if (revealedSet.has(i)) return ch
       return '_'
     })
   }, [])
@@ -95,19 +104,21 @@ export default function Completamento() {
     }
     const word = questions[questionIndex]?.answer ?? ''
     revealRef.current = setInterval(() => {
-      setRevealedCount(rc => {
-        const max = word.length - 1 // never reveal last
-        return Math.min(rc + 1, max)
+      setRevealedIndexes(current => {
+        const hiddenIndexes = getRevealableIndexes(word).filter(i => !current.includes(i))
+        if (hiddenIndexes.length === 0) return current
+        const nextIndex = hiddenIndexes[Math.floor(Math.random() * hiddenIndexes.length)]
+        return [...current, nextIndex]
       })
     }, config.revealInterval * 1000)
     return () => { if (revealRef.current) clearInterval(revealRef.current) }
-  }, [timerRunning, paused, questionIndex, questions, config.revealInterval])
+  }, [timerRunning, paused, questionIndex, questions, config.revealInterval, getRevealableIndexes])
 
   const advancePlayer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     if (revealRef.current) clearInterval(revealRef.current)
     setFeedback(null)
-    setRevealedCount(0)
+    setRevealedIndexes([])
 
     // Find next non-eliminated player
     const nextIdx = (() => {
@@ -161,7 +172,8 @@ export default function Completamento() {
   }))
 
   const currentQuestion = questions[questionIndex]
-  const masked = currentQuestion ? getMaskedWord(currentQuestion.answer, revealedCount) : []
+  const masked = currentQuestion ? getMaskedWord(currentQuestion.answer, revealedIndexes) : []
+  const revealableCount = currentQuestion ? getRevealableIndexes(currentQuestion.answer).length : 0
 
   /* ===== SETUP ===== */
   if (phase === 'setup') {
@@ -187,7 +199,7 @@ export default function Completamento() {
           <div className={styles.section}>
             <label className={styles.label}>⏲ Rivela una lettera ogni (secondi)</label>
             <div className={styles.numRow}>
-              {[2, 3, 4, 5, 8].map(v => (
+              {[0.5, 1, 2, 3, 4, 5, 8].map(v => (
                 <button key={v}
                   className={[styles.chip, config.revealInterval === v ? styles.chipActive : ''].join(' ')}
                   onClick={() => setConfig(c => ({ ...c, revealInterval: v }))}
@@ -291,7 +303,7 @@ export default function Completamento() {
           </div>
 
           <div className={styles.revealInfo}>
-            {revealedCount} / {(currentQuestion?.answer.length ?? 1) - 1} lettere rivelate
+            {revealedIndexes.length} / {revealableCount} lettere rivelate
           </div>
 
           <div className={styles.actionGrid}>

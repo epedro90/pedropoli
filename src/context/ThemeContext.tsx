@@ -2,8 +2,6 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export type Theme = 'arcade' | 'modern' | 'ember'
 
-const THEMES: Theme[] = ['arcade', 'modern', 'ember']
-
 const ThemeCtx = createContext<{ theme: Theme; setTheme: (t: Theme) => void }>({
   theme: 'arcade',
   setTheme: () => {},
