@@ -1,4 +1,4 @@
-export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento'
+export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento' | 'chi-sono' | 'taboo-sprint' | 'il-falso'
 
 export interface GameDefinition {
   id: GameId
@@ -49,5 +49,41 @@ export const GAMES: GameDefinition[] = [
     emoji: '🔤',
     players: '2-8 giocatori',
     difficulty: 'Facile',
+  },
+  {
+    id: 'chi-sono',
+    title: 'Chi Sono?',
+    subtitle: 'Indizi progressivi e risposta rapida',
+    description: 'Indovina il personaggio o l oggetto dal minor numero di indizi possibile. Ogni clue apre punti in meno.',
+    route: '/chi-sono',
+    accentColor: '#ffd166',
+    secondaryColor: '#ff4d6d',
+    emoji: '❓',
+    players: '2-8 giocatori',
+    difficulty: 'Medio',
+  },
+  {
+    id: 'taboo-sprint',
+    title: 'Taboo Sprint',
+    subtitle: 'Parole vietate e ritmo serrato',
+    description: 'Fai indovinare la parola senza usare i taboo. Più risposte giuste, più punti in meno tempo.',
+    route: '/taboo-sprint',
+    accentColor: '#ff6b6b',
+    secondaryColor: '#ffd166',
+    emoji: '🚫',
+    players: '2-8 giocatori',
+    difficulty: 'Medio',
+  },
+  {
+    id: 'il-falso',
+    title: 'Il Falso',
+    subtitle: 'Trova l affermazione inventata',
+    description: 'Tra quattro affermazioni una sola e falsa: scoprila prima che finisca il tempo del tuo turno.',
+    route: '/il-falso',
+    accentColor: '#a855f7',
+    secondaryColor: '#ffd166',
+    emoji: '🕵️',
+    players: '2-8 giocatori',
+    difficulty: 'Medio',
   },
 ]

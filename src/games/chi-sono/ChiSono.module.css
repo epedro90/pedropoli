@@ -1,0 +1,388 @@
+.page {
+  min-height: 100vh;
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.setupCard {
+  background: rgba(16, 42, 92, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 209, 102, 0.32);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 0 30px rgba(255, 209, 102, 0.08);
+  animation: slide-in-up 0.4s ease-out;
+}
+
+.back {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  padding: 0.2em 0;
+  transition: var(--transition);
+}
+.back:hover { color: var(--yellow); }
+
+.gameTitle {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
+  text-align: center;
+}
+
+.gameSub {
+  text-align: center;
+  color: var(--gray);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: -1rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray);
+}
+
+.numRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background: rgba(6, 20, 46, 0.8);
+  border: 1.5px solid rgba(255, 209, 102, 0.24);
+  border-radius: var(--radius-sm);
+  color: var(--gray);
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.4em 1em;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.chip:hover { border-color: var(--yellow); color: var(--yellow); }
+.chipActive {
+  background: rgba(255, 209, 102, 0.12);
+  border-color: var(--yellow);
+  color: var(--yellow);
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.18);
+}
+
+.gameLayout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 980px;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .gameLayout { grid-template-columns: 1fr; }
+  .sidebar { order: 2; }
+  .gameMain { order: 1; }
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.gameMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.playerBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.16), rgba(124, 58, 237, 0.14));
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1.2rem;
+}
+
+.playerBannerIcon { font-size: 2rem; }
+
+.playerBannerName {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--yellow);
+}
+
+.playerBannerLabel {
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.personalTimer {
+  margin-left: auto;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.categoryPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(255, 209, 102, 0.12);
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  color: var(--yellow);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.scoreHint {
+  color: var(--gray);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clueCard {
+  background: rgba(6, 20, 46, 0.82);
+  border: 2px solid rgba(255, 209, 102, 0.25);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.clueTitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray);
+  margin-bottom: 0.5rem;
+}
+
+.answerMask {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.35;
+  margin-bottom: 1rem;
+}
+
+.clueList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.clueRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  background: rgba(16, 42, 92, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+.hiddenClue {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.clueIndex {
+  min-width: 2.2rem;
+  color: var(--yellow);
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.clueText {
+  flex: 1;
+  color: var(--white);
+  line-height: 1.4;
+}
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+.feedback strong {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.feedback span {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.82);
+}
+.success {
+  background: rgba(6, 214, 160, 0.12);
+  border-color: rgba(6, 214, 160, 0.35);
+}
+.error {
+  background: rgba(239, 71, 111, 0.12);
+  border-color: rgba(239, 71, 111, 0.35);
+}
+.info {
+  background: rgba(255, 209, 102, 0.12);
+  border-color: rgba(255, 209, 102, 0.35);
+}
+
+.guessForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.guessInput {
+  width: 100%;
+  background: rgba(6, 20, 46, 0.9);
+  border: 1.5px solid rgba(255, 209, 102, 0.22);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+  color: var(--white);
+  font-family: var(--font-main);
+  font-size: 1rem;
+}
+
+.guessInput:focus {
+  outline: none;
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.12);
+}
+
+.guessActions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 0.75rem;
+}
+
+.turnInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.8rem 0.9rem;
+  background: rgba(6, 20, 46, 0.65);
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  border-radius: var(--radius-sm);
+}
+
+.turnLabel {
+  color: var(--gray);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.turnVal {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--yellow);
+}
+
+.resultsCard {
+  background: rgba(16, 42, 92, 0.86);
+  border: 2px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(255, 209, 102, 0.22);
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.winnerBadge { font-size: 4rem; animation: float 2s ease-in-out infinite; }
+.winnerTitle {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--yellow);
+}
+.winnerName {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--white);
+}
+.winnerSub { color: var(--gray); }
+
+.finalList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.finalRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(6, 20, 46, 0.5);
+  border-radius: var(--radius-sm);
+}
+.first { border: 1px solid var(--yellow); background: rgba(255, 209, 102, 0.08); }
+.finalRank { font-size: 1.1rem; min-width: 30px; }
+.finalName { flex: 1; font-weight: 700; text-align: left; }
+.finalScore { font-family: var(--font-display); color: var(--yellow); font-weight: 900; }
+.finalMeta { font-size: 0.8rem; color: var(--gray); }
+
+.resultsBtns {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
