@@ -1,0 +1,81 @@
+.board {
+  background: rgba(6, 20, 46, 0.7);
+  border: 1px solid rgba(0, 170, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 1rem;
+  min-width: 200px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  opacity: 0.9;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(16, 42, 92, 0.5);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.active {
+  background: rgba(16, 42, 92, 0.9);
+  border-color: var(--blue-electric);
+}
+
+.eliminated {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.rank {
+  font-size: 0.85rem;
+  min-width: 28px;
+  text-align: center;
+  font-family: var(--font-display);
+}
+
+.name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.score {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.pts {
+  font-size: 0.65rem;
+  opacity: 0.7;
+  font-family: var(--font-main);
+}

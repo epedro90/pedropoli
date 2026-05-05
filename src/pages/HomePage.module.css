@@ -1,0 +1,158 @@
+.page {
+  min-height: 100vh;
+  padding: 0 0 4rem;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 4rem 2rem 3rem;
+  overflow: hidden;
+}
+
+.heroGlow {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 170, 255, 0.18) 0%,
+    rgba(124, 58, 237, 0.12) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.logoWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+  animation: slide-in-down 0.6s ease-out;
+}
+
+.logoIcon {
+  font-size: 5rem;
+  line-height: 1;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.6));
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.titlePedro {
+  color: var(--cyan);
+  text-shadow: 0 0 30px var(--cyan), 0 0 60px rgba(0, 245, 255, 0.4);
+}
+
+.titlePoli {
+  color: var(--pink);
+  text-shadow: 0 0 30px var(--pink), 0 0 60px rgba(255, 79, 216, 0.4);
+}
+
+.tagline {
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 0.3rem;
+}
+
+.decorRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vw, 1.2rem);
+  margin: 1.5rem 0;
+  animation: fade-in 0.8s ease-out 0.3s both;
+}
+
+.decorEmoji {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+}
+
+.subtitle {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  color: var(--gray);
+  line-height: 1.7;
+  max-width: 580px;
+  margin: 0 auto;
+  animation: fade-in 0.8s ease-out 0.5s both;
+}
+
+.subtitleHighlight {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* Games section */
+.gamesSection {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--white);
+}
+
+.sectionDecor {
+  color: var(--violet-light);
+  font-size: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem 0;
+  margin-top: 3rem;
+}
+
+.footerDivider {
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-electric), transparent);
+  margin: 0 auto 1.5rem;
+}
+
+.footerText {
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.footerSub {
+  color: rgba(148, 163, 184, 0.5);
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
