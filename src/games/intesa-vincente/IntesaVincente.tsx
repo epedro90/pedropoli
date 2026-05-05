@@ -35,7 +35,7 @@ export default function IntesaVincente() {
   const [turnsPlayed, setTurnsPlayed] = useState<number>(0)
   const [modal, setModal] = useState<ModalState>({ open: false, type: 'info', title: '' })
   const [wordAnim, setWordAnim] = useState('')
-  const [roundsCount] = useState(2)
+  const [roundsCount] = useState(1)
 
   const totalTurns = config.teams.length * roundsCount
 

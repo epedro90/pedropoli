@@ -40,7 +40,7 @@ export default function Completamento() {
     setCurrentPlayerIdx(0)
     setQuestionIndex(0)
     setRevealedCount(0)
-    setTimerRunning(false)
+    setTimerRunning(true)
     setPaused(false)
     setPhase('playing')
   }
@@ -106,7 +106,6 @@ export default function Completamento() {
   const advancePlayer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     if (revealRef.current) clearInterval(revealRef.current)
-    setTimerRunning(false)
     setFeedback(null)
     setRevealedCount(0)
 
@@ -295,22 +294,14 @@ export default function Completamento() {
             {revealedCount} / {(currentQuestion?.answer.length ?? 1) - 1} lettere rivelate
           </div>
 
-          {!timerRunning ? (
-            <Button variant="success" size="xl" fullWidth glow onClick={() => setTimerRunning(true)}>
-              ▶ Avvia Turno
+          <div className={styles.actionGrid}>
+            <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
+            <Button variant="danger" size="xl" onClick={handleError}>❌ Errore</Button>
+            <Button variant="warning" size="lg" onClick={handleSkip}>⏭ Salta</Button>
+            <Button variant="ghost" size="lg" onClick={() => setPaused(p => !p)}>
+              {paused ? '▶ Riprendi' : '⏸ Pausa'}
             </Button>
-          ) : (
-            <>
-              <div className={styles.actionGrid}>
-                <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
-                <Button variant="danger" size="xl" onClick={handleError}>❌ Errore</Button>
-                <Button variant="warning" size="lg" onClick={handleSkip}>⏭ Salta</Button>
-                <Button variant="ghost" size="lg" onClick={() => setPaused(p => !p)}>
-                  {paused ? '▶ Riprendi' : '⏸ Pausa'}
-                </Button>
-              </div>
-            </>
-          )}
+          </div>
         </div>
       </div>
     </div>
