@@ -1,6 +1,6 @@
 .card {
   position: relative;
-  background: linear-gradient(145deg, rgba(16, 42, 92, 0.9), rgba(10, 25, 60, 0.95));
+  background: var(--card-bg);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius);
   padding: 1.75rem 1.5rem;

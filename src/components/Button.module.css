@@ -41,14 +41,14 @@
 .primary {
   background: linear-gradient(135deg, var(--blue-electric), var(--violet));
   color: var(--white);
-  box-shadow: 0 4px 20px rgba(0, 170, 255, 0.35);
+  box-shadow: var(--btn-primary-shadow);
 }
 .primary:not(:disabled):hover {
-  box-shadow: 0 6px 30px rgba(0, 170, 255, 0.55);
+  box-shadow: var(--btn-primary-shadow-hover);
 }
 
 .secondary {
-  background: rgba(16, 42, 92, 0.9);
+  background: var(--btn-secondary-bg);
   color: var(--blue-electric);
   border: 1.5px solid var(--blue-electric);
 }
