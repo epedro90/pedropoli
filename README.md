@@ -9,7 +9,7 @@ Raccolta di giochi da fare tra amici, ispirata ai grandi quiz show televisivi. B
 | 🧠 **Intesa Vincente** | Due suggeritori si alternano parola per parola per far indovinare la parola segreta al compagno di squadra |
 | 🎯 **Avanti un Altro – Finale al Contrario** | 21 domande a cui bisogna rispondere **sempre in modo sbagliato** |
 | 🔤 **Completamento** | Le lettere della risposta si rivelano con il tempo — indovina prima che finisca il tuo cronometro |
-| ❓ **Chi Sono?** | Indovina il personaggio o l oggetto partendo da indizi progressivi e da un timer che stringe |
+| ❓ **Chi Sono?** | Indovina il personaggio o l’oggetto partendo da indizi progressivi e da un timer che stringe |
 | 🚫 **Taboo Sprint** | Fai indovinare la parola senza dire i taboo: ogni turno corre veloce e ogni errore pesa |
 | 🕵️ **Il Falso** | Tra quattro affermazioni una sola è inventata: scoprila prima che finisca il turno |
 
@@ -61,19 +61,7 @@ I file statici vengono generati nella cartella `dist/`.
 
 ## Pubblicazione su GitHub Pages
 
-### 1. Configura il base path
-
-In `vite.config.ts`, imposta `base` con il nome del tuo repository:
-
-```ts
-// Se il repository si chiama "pedropoli":
-base: '/pedropoli/'
-
-// Se usi username.github.io come root:
-base: '/'
-```
-
-### 2. Deploy
+### 1. Deploy
 
 ```bash
 npm run deploy
@@ -81,7 +69,7 @@ npm run deploy
 
 Questo comando esegue la build e pubblica la cartella `dist/` sul branch `gh-pages`.
 
-### 3. Abilita GitHub Pages
+### 2. Abilita GitHub Pages
 
 Nel repository GitHub → **Settings** → **Pages** → scegli il branch `gh-pages` come sorgente.
 
@@ -89,7 +77,7 @@ Nel repository GitHub → **Settings** → **Pages** → scegli il branch `gh-pa
 
 ```
 src/
-  components/       # Componenti riutilizzabili (Button, Timer, ScoreBoard, Modal…)
+  components/       # Componenti riutilizzabili (Button, Timer, ScoreBoard, Modal, ...)
   games/
     intesa-vincente/
     avanti-un-altro/
@@ -108,6 +96,6 @@ src/
 
 1. Crea `src/games/nuovo-gioco/` con `NuovoGioco.tsx`, `data.ts`, `types.ts`
 2. Aggiungi la definizione in `src/types/game.ts` nell'array `GAMES`
-3. Aggiungi la `<Route>` in `src/App.tsx`
+3. La route si aggiunge in automatico: importa il componente in `src/App.tsx` e registralo in `GAME_COMPONENTS`
 
 La homepage genera automaticamente le card dai dati in `GAMES`.

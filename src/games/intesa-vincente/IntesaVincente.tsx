@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GamePhase, Team, IntesaConfig, TurnState } from './types'
 import { getShuffledWords } from './data'
@@ -7,7 +7,10 @@ import Timer from '../../components/Timer'
 import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import Modal from '../../components/Modal'
 import PlayerSetup from '../../components/PlayerSetup'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
+import { applyTeamScoreDelta, getNextTeamIndex, isLastTurn } from './logic'
 import styles from './IntesaVincente.module.css'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
 
 const DEFAULT_CONFIG: IntesaConfig = {
   teams: [
@@ -16,117 +19,188 @@ const DEFAULT_CONFIG: IntesaConfig = {
   ],
   timerDuration: 60,
   maxSkips: 3,
-  wordsPerTurn: 10,
 }
 
 type ModalState = { open: boolean; type: 'success' | 'error' | 'info' | 'winner' | 'warning'; title: string; message?: string }
 
+interface GameState {
+  words: string[]
+  turn: TurnState
+  teams: Team[]
+  turnsPlayed: number
+  modal: ModalState
+  wordAnim: string
+}
+
+type Action =
+  | { type: 'START'; words: string[]; teams: Team[]; turn: TurnState }
+  | { type: 'TOGGLE_TIMER' }
+  | { type: 'SET_WORD_ANIM'; anim: string }
+  | { type: 'SET_MODAL'; modal: ModalState }
+  | { type: 'CLOSE_MODAL' }
+  | { type: 'SCORE_AND_NEXT'; delta: number; field: 'correctThisTurn' | 'penaltyThisTurn' | null }
+  | { type: 'SKIP' }
+  | { type: 'TIME_UP'; teamName: string }
+  | { type: 'END_TURN'; nextTeamIndex: number; nextWordIndex: number; config: IntesaConfig }
+
+function reducer(state: GameState, action: Action): GameState {
+  switch (action.type) {
+    case 'START':
+      return { ...state, words: action.words, teams: action.teams, turn: action.turn, turnsPlayed: 0, modal: { open: false, type: 'info', title: '' }, wordAnim: '' }
+    case 'TOGGLE_TIMER':
+      return { ...state, turn: { ...state.turn, timerRunning: !state.turn.timerRunning } }
+    case 'SET_WORD_ANIM':
+      return { ...state, wordAnim: action.anim }
+    case 'SET_MODAL':
+      return { ...state, modal: action.modal }
+    case 'CLOSE_MODAL':
+      return { ...state, modal: { ...state.modal, open: false } }
+    case 'SCORE_AND_NEXT':
+      return {
+        ...state,
+        teams: applyTeamScoreDelta(state.teams, state.turn.teamIndex, action.delta),
+        turn: {
+          ...state.turn,
+          wordIndex: state.turn.wordIndex + 1,
+          correctThisTurn: action.field === 'correctThisTurn' ? state.turn.correctThisTurn + 1 : state.turn.correctThisTurn,
+          penaltyThisTurn: action.field === 'penaltyThisTurn' ? state.turn.penaltyThisTurn + 1 : state.turn.penaltyThisTurn,
+        },
+      }
+    case 'SKIP':
+      return {
+        ...state,
+        turn: { ...state.turn, wordIndex: state.turn.wordIndex + 1, skipsLeft: state.turn.skipsLeft - 1 },
+      }
+    case 'TIME_UP':
+      return {
+        ...state,
+        turn: { ...state.turn, timerRunning: false },
+        modal: { open: true, type: 'warning', title: '⏰ Tempo Scaduto!', message: `${action.teamName}: turno terminato.` },
+      }
+    case 'END_TURN':
+      return {
+        ...state,
+        turnsPlayed: state.turnsPlayed + 1,
+        modal: { open: false, type: 'info', title: '' },
+        turn: {
+          teamIndex: action.nextTeamIndex,
+          wordIndex: action.nextWordIndex,
+          skipsLeft: action.config.maxSkips,
+          timerRunning: false,
+          timeLeft: action.config.timerDuration,
+          correctThisTurn: 0,
+          penaltyThisTurn: 0,
+        },
+      }
+    default:
+      return state
+  }
+}
+
+const ROUNDS = 1
+
 export default function IntesaVincente() {
   const navigate = useNavigate()
-  const [phase, setPhase] = useState<GamePhase>('setup')
-  const [config, setConfig] = useState<IntesaConfig>(DEFAULT_CONFIG)
-  const [words, setWords] = useState<string[]>([])
-  const [turn, setTurn] = useState<TurnState>({
-    teamIndex: 0, wordIndex: 0, skipsLeft: DEFAULT_CONFIG.maxSkips,
-    timerRunning: false, timeLeft: DEFAULT_CONFIG.timerDuration,
-    correctThisTurn: 0, penaltyThisTurn: 0,
+  const [phase, setPhase] = useReducer((_: GamePhase, next: GamePhase) => next, 'setup' as GamePhase)
+  const [config, setConfig] = useReducer(
+    (prev: IntesaConfig, patch: Partial<IntesaConfig>) => ({ ...prev, ...patch }),
+    DEFAULT_CONFIG
+  )
+  const [state, dispatch] = useReducer(reducer, {
+    words: [],
+    turn: { teamIndex: 0, wordIndex: 0, skipsLeft: DEFAULT_CONFIG.maxSkips, timerRunning: false, timeLeft: DEFAULT_CONFIG.timerDuration, correctThisTurn: 0, penaltyThisTurn: 0 },
+    teams: [],
+    turnsPlayed: 0,
+    modal: { open: false, type: 'info', title: '' },
+    wordAnim: '',
   })
-  const [teams, setTeams] = useState<Team[]>([])
-  const [turnsPlayed, setTurnsPlayed] = useState<number>(0)
-  const [modal, setModal] = useState<ModalState>({ open: false, type: 'info', title: '' })
-  const [wordAnim, setWordAnim] = useState('')
-  const [roundsCount] = useState(1)
+  const wordAnimTimer = useSafeTimeout()
+  const { onTick } = useCountdownSound()
+  const modalTimer = useSafeTimeout()
 
-  const totalTurns = config.teams.length * roundsCount
+  const totalTurns = config.teams.length * ROUNDS
 
-  const startGame = () => {
-    const shuffled = getShuffledWords()
-    setWords(shuffled)
-    const resetTeams = config.teams.map(t => ({ ...t, score: 0 }))
-    setTeams(resetTeams)
-    setTurn({
-      teamIndex: 0, wordIndex: 0, skipsLeft: config.maxSkips,
-      timerRunning: false, timeLeft: config.timerDuration,
-      correctThisTurn: 0, penaltyThisTurn: 0,
-    })
-    setTurnsPlayed(0)
-    setPhase('playing')
-  }
+  const animateWord = useCallback((anim: string) => {
+    dispatch({ type: 'SET_WORD_ANIM', anim })
+    wordAnimTimer.set(() => dispatch({ type: 'SET_WORD_ANIM', anim: '' }), 400)
+  }, [wordAnimTimer])
 
-  const animateWord = (type: 'correct' | 'error' | 'skip') => {
-    setWordAnim(type)
-    setTimeout(() => setWordAnim(''), 400)
-  }
-
-  const updateTeamScore = (delta: number) => {
-    setTeams(prev => prev.map((t, i) =>
-      i === turn.teamIndex ? { ...t, score: Math.max(0, t.score + delta) } : t
-    ))
-  }
-
-  const nextWord = (delta: number, field: 'correctThisTurn' | 'penaltyThisTurn' | null) => {
-    updateTeamScore(delta)
-    setTurn(prev => ({
-      ...prev,
-      wordIndex: prev.wordIndex + 1,
-      correctThisTurn: field === 'correctThisTurn' ? prev.correctThisTurn + 1 : prev.correctThisTurn,
-      penaltyThisTurn: field === 'penaltyThisTurn' ? prev.penaltyThisTurn + 1 : prev.penaltyThisTurn,
-    }))
-  }
-
-  const handleCorrect = () => {
-    animateWord('correct')
-    setModal({ open: true, type: 'success', title: '✅ Corretta! +1 punto', message: 'Ottimo! Prossima parola...' })
-    nextWord(1, 'correctThisTurn')
-    setTimeout(() => setModal(m => ({ ...m, open: false })), 1200)
-  }
-
-  const handleError = () => {
-    animateWord('error')
-    setModal({ open: true, type: 'error', title: '❌ Penalità! −1 punto', message: 'Attenzione alle regole!' })
-    nextWord(-1, 'penaltyThisTurn')
-    setTimeout(() => setModal(m => ({ ...m, open: false })), 1200)
-  }
-
-  const handleSkip = () => {
-    if (turn.skipsLeft <= 0) return
-    animateWord('skip')
-    setTurn(prev => ({ ...prev, wordIndex: prev.wordIndex + 1, skipsLeft: prev.skipsLeft - 1 }))
-  }
-
-  const handleTimeUp = useCallback(() => {
-    setTurn(prev => ({ ...prev, timerRunning: false }))
-    setModal({ open: true, type: 'warning', title: '⏰ Tempo Scaduto!', message: `${teams[turn.teamIndex]?.name}: turno terminato.` })
-  }, [teams, turn.teamIndex])
-
-  const endTurn = () => {
-    const nextTurns = turnsPlayed + 1
-    setTurnsPlayed(nextTurns)
-    setModal({ open: false, type: 'info', title: '' })
-
-    if (nextTurns >= totalTurns) {
+  const endTurn = useCallback((nextWordIndex = state.turn.wordIndex) => {
+    modalTimer.clear()
+    if (isLastTurn(state.turnsPlayed, totalTurns)) {
       setPhase('results')
       return
     }
+    const nextTeamIndex = getNextTeamIndex(state.turn.teamIndex, config.teams.length)
+    dispatch({ type: 'END_TURN', nextTeamIndex, nextWordIndex, config })
+  }, [config, modalTimer, state.turn.teamIndex, state.turn.wordIndex, state.turnsPlayed, totalTurns])
 
-    const nextTeamIndex = (turn.teamIndex + 1) % config.teams.length
-    setTurn({
-      teamIndex: nextTeamIndex,
-      wordIndex: turn.wordIndex,
-      skipsLeft: config.maxSkips,
-      timerRunning: false,
-      timeLeft: config.timerDuration,
-      correctThisTurn: 0,
-      penaltyThisTurn: 0,
+  const startGame = () => {
+    wordAnimTimer.clear()
+    modalTimer.clear()
+    const shuffled = getShuffledWords()
+    const resetTeams = config.teams.map(t => ({ ...t, score: 0 }))
+    dispatch({
+      type: 'START',
+      words: shuffled,
+      teams: resetTeams,
+      turn: { teamIndex: 0, wordIndex: 0, skipsLeft: config.maxSkips, timerRunning: false, timeLeft: config.timerDuration, correctThisTurn: 0, penaltyThisTurn: 0 },
     })
+    setPhase('playing')
   }
 
-  const currentWord = words[turn.wordIndex] ?? '—'
-  const currentTeam = teams[turn.teamIndex]
-  const scorePlayers: Player[] = teams.map(t => ({
-    id: t.id, name: t.name, score: t.score, isActive: t.id === teams[turn.teamIndex]?.id
+  const handleCorrect = useCallback(() => {
+    if (!state.turn.timerRunning) return
+    animateWord('correct')
+    dispatch({ type: 'SCORE_AND_NEXT', delta: 1, field: 'correctThisTurn' })
+    dispatch({ type: 'SET_MODAL', modal: { open: true, type: 'success', title: '✅ Corretta! +1 punto', message: 'Ottimo! Prossima parola...' } })
+    modalTimer.clear()
+    modalTimer.set(() => dispatch({ type: 'CLOSE_MODAL' }), 1200)
+  }, [animateWord, modalTimer, state.turn.timerRunning])
+
+  const handleError = useCallback(() => {
+    if (!state.turn.timerRunning) return
+    animateWord('error')
+    dispatch({ type: 'SCORE_AND_NEXT', delta: -1, field: 'penaltyThisTurn' })
+    dispatch({ type: 'SET_MODAL', modal: { open: true, type: 'error', title: '❌ Penalità! −1 punto', message: 'Attenzione alle regole!' } })
+    modalTimer.clear()
+    modalTimer.set(() => dispatch({ type: 'CLOSE_MODAL' }), 1200)
+  }, [animateWord, modalTimer, state.turn.timerRunning])
+
+  const handleSkip = useCallback(() => {
+    if (!state.turn.timerRunning || state.turn.skipsLeft <= 0) return
+    animateWord('skip')
+    dispatch({ type: 'SKIP' })
+  }, [animateWord, state.turn.skipsLeft, state.turn.timerRunning])
+
+  const handleTimeUp = useCallback(() => {
+    modalTimer.clear()
+    wordAnimTimer.clear()
+    dispatch({ type: 'TIME_UP', teamName: state.teams[state.turn.teamIndex]?.name ?? '' })
+  }, [modalTimer, wordAnimTimer, state.teams, state.turn.teamIndex])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (event.key === '1') handleCorrect()
+      if (event.key === '2') handleError()
+      if (event.key === '3') handleSkip()
+      if (event.key === ' ') {
+        event.preventDefault()
+        dispatch({ type: 'TOGGLE_TIMER' })
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleCorrect, handleError, handleSkip])
+
+  const currentWord = state.words[state.turn.wordIndex] ?? '—'
+  const currentTeam = state.teams[state.turn.teamIndex]
+  const scorePlayers: Player[] = state.teams.map(t => ({
+    id: t.id, name: t.name, score: t.score, isActive: t.id === state.teams[state.turn.teamIndex]?.id
   }))
-  const winner = [...teams].sort((a, b) => b.score - a.score)[0]
+  const winner = [...state.teams].sort((a, b) => b.score - a.score)[0]
 
   /* ===== SETUP ===== */
   if (phase === 'setup') {
@@ -143,7 +217,7 @@ export default function IntesaVincente() {
               {[30, 45, 60, 90, 120].map(v => (
                 <button key={v}
                   className={[styles.chip, config.timerDuration === v ? styles.chipActive : ''].join(' ')}
-                  onClick={() => setConfig(c => ({ ...c, timerDuration: v }))}
+                  onClick={() => setConfig({ timerDuration: v })}
                 >{v}s</button>
               ))}
             </div>
@@ -155,7 +229,7 @@ export default function IntesaVincente() {
               {[0, 1, 2, 3, 5].map(v => (
                 <button key={v}
                   className={[styles.chip, config.maxSkips === v ? styles.chipActive : ''].join(' ')}
-                  onClick={() => setConfig(c => ({ ...c, maxSkips: v }))}
+                  onClick={() => setConfig({ maxSkips: v })}
                 >{v}</button>
               ))}
             </div>
@@ -167,20 +241,18 @@ export default function IntesaVincente() {
                 <input
                   className={styles.teamNameInput}
                   value={team.name}
-                  onChange={e => setConfig(c => ({
-                    ...c,
-                    teams: c.teams.map((t, i) => i === tidx ? { ...t, name: e.target.value } : t)
-                  }))}
+                  onChange={e => setConfig({
+                    teams: config.teams.map((t, i) => i === tidx ? { ...t, name: e.target.value } : t)
+                  })}
                   placeholder={`Nome squadra ${tidx + 1}`}
                 />
               </div>
               <PlayerSetup
-                label={`Giocatori`}
+                label="Giocatori"
                 players={team.players}
-                onChange={players => setConfig(c => ({
-                  ...c,
-                  teams: c.teams.map((t, i) => i === tidx ? { ...t, players } : t)
-                }))}
+                onChange={players => setConfig({
+                  teams: config.teams.map((t, i) => i === tidx ? { ...t, players } : t)
+                })}
                 min={3}
                 max={8}
                 placeholder="Nome giocatore"
@@ -190,13 +262,12 @@ export default function IntesaVincente() {
 
           <div className={styles.teamsActions}>
             {config.teams.length < 4 && (
-              <Button variant="ghost" size="sm" onClick={() => setConfig(c => ({
-                ...c,
-                teams: [...c.teams, { id: `t${Date.now()}`, name: `Squadra ${c.teams.length + 1}`, players: ['', '', ''], score: 0 }]
-              }))}>+ Aggiungi Squadra</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfig({
+                teams: [...config.teams, { id: `t${Date.now()}`, name: `Squadra ${config.teams.length + 1}`, players: ['', '', ''], score: 0 }]
+              })}>+ Aggiungi Squadra</Button>
             )}
             {config.teams.length > 2 && (
-              <Button variant="ghost" size="sm" onClick={() => setConfig(c => ({ ...c, teams: c.teams.slice(0, -1) }))}>
+              <Button variant="ghost" size="sm" onClick={() => setConfig({ teams: config.teams.slice(0, -1) })}>
                 − Rimuovi Ultima
               </Button>
             )}
@@ -212,14 +283,14 @@ export default function IntesaVincente() {
 
   /* ===== RESULTS ===== */
   if (phase === 'results') {
-    const sorted = [...teams].sort((a, b) => b.score - a.score)
+    const sorted = [...state.teams].sort((a, b) => b.score - a.score)
     return (
       <div className={styles.page}>
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE!</h1>
-          <h2 className={styles.winnerName}>{winner.name}</h2>
-          <p className={styles.winnerScore}>{winner.score} punti</p>
+          <h2 className={styles.winnerName}>{winner?.name}</h2>
+          <p className={styles.winnerScore}>{winner?.score} punti</p>
 
           <div className={styles.finalScores}>
             {sorted.map((t, i) => (
@@ -244,17 +315,15 @@ export default function IntesaVincente() {
   return (
     <div className={styles.page}>
       <div className={styles.gameLayout}>
-        {/* Sidebar */}
         <aside className={styles.sidebar}>
           <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita sarà persa.')) navigate('/') }}>← Home</button>
           <ScoreBoard players={scorePlayers} accentColor="var(--blue-electric)" title="Classifica" />
           <div className={styles.turnInfo}>
             <span className={styles.turnLabel}>Turno</span>
-            <span className={styles.turnVal}>{turnsPlayed + 1} / {totalTurns}</span>
+            <span className={styles.turnVal}>{state.turnsPlayed + 1} / {totalTurns}</span>
           </div>
         </aside>
 
-        {/* Main */}
         <div className={styles.gameMain}>
           <div className={styles.teamBanner} style={{ background: 'linear-gradient(135deg, var(--blue-electric), var(--violet))' }}>
             <span className={styles.teamBannerIcon}>🧠</span>
@@ -264,8 +333,9 @@ export default function IntesaVincente() {
           <div className={styles.timerRow}>
             <Timer
               duration={config.timerDuration}
-              running={turn.timerRunning}
+              running={state.turn.timerRunning}
               onTimeUp={handleTimeUp}
+            onTick={onTick}
               warningAt={10}
               size="lg"
             />
@@ -273,9 +343,9 @@ export default function IntesaVincente() {
 
           <div className={[
             styles.wordBox,
-            wordAnim === 'correct' ? styles.wordCorrect : '',
-            wordAnim === 'error' ? styles.wordError : '',
-            wordAnim === 'skip' ? styles.wordSkip : '',
+            state.wordAnim === 'correct' ? styles.wordCorrect : '',
+            state.wordAnim === 'error' ? styles.wordError : '',
+            state.wordAnim === 'skip' ? styles.wordSkip : '',
           ].filter(Boolean).join(' ')}>
             <p className={styles.wordLabel}>Parola da indovinare</p>
             <h2 className={styles.word}>{currentWord}</h2>
@@ -283,21 +353,21 @@ export default function IntesaVincente() {
 
           <div className={styles.statsRow}>
             <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--green)' }}>{turn.correctThisTurn}</span>
+              <span className={styles.statVal} style={{ color: 'var(--green)' }}>{state.turn.correctThisTurn}</span>
               <span className={styles.statLabel}>Corrette</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--red)' }}>{turn.penaltyThisTurn}</span>
+              <span className={styles.statVal} style={{ color: 'var(--red)' }}>{state.turn.penaltyThisTurn}</span>
               <span className={styles.statLabel}>Penalità</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--yellow)' }}>{turn.skipsLeft}</span>
+              <span className={styles.statVal} style={{ color: 'var(--yellow)' }}>{state.turn.skipsLeft}</span>
               <span className={styles.statLabel}>Passi</span>
             </div>
           </div>
 
-          {!turn.timerRunning ? (
-            <Button variant="primary" size="xl" fullWidth glow onClick={() => setTurn(t => ({ ...t, timerRunning: true }))}>
+          {!state.turn.timerRunning ? (
+            <Button variant="primary" size="xl" fullWidth glow onClick={() => dispatch({ type: 'TOGGLE_TIMER' })}>
               ▶ Avvia Timer
             </Button>
           ) : (
@@ -305,25 +375,25 @@ export default function IntesaVincente() {
               <div className={styles.actionGrid}>
                 <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
                 <Button variant="danger" size="xl" onClick={handleError}>❌ Penalità −1</Button>
-                <Button variant="warning" size="lg" onClick={handleSkip} disabled={turn.skipsLeft <= 0}>⏭ Passo ({turn.skipsLeft})</Button>
-                <Button variant="ghost" size="lg" onClick={() => setTurn(t => ({ ...t, timerRunning: false }))}>⏸ Pausa</Button>
+                <Button variant="warning" size="lg" onClick={handleSkip} disabled={state.turn.skipsLeft <= 0}>⏭ Passo ({state.turn.skipsLeft})</Button>
+                <Button variant="ghost" size="lg" onClick={() => dispatch({ type: 'TOGGLE_TIMER' })}>⏸ Pausa</Button>
               </div>
-              <Button variant="outline" size="lg" fullWidth onClick={endTurn}>🔁 Fine Turno</Button>
+              <Button variant="outline" size="lg" fullWidth onClick={() => endTurn()}>🔁 Fine Turno</Button>
             </>
           )}
         </div>
       </div>
 
       <Modal
-        open={modal.open}
-        type={modal.type}
-        title={modal.title}
-        message={modal.message}
-        onClose={() => modal.type === 'warning' ? undefined : setModal(m => ({ ...m, open: false }))}
+        open={state.modal.open}
+        type={state.modal.type}
+        title={state.modal.title}
+        message={state.modal.message}
+        onClose={() => state.modal.type === 'warning' ? undefined : dispatch({ type: 'CLOSE_MODAL' })}
       >
-        {modal.type === 'warning' && (
+        {state.modal.type === 'warning' && (
           <div style={{ marginTop: '1rem' }}>
-            <Button variant="primary" size="lg" onClick={endTurn}>➡ Fine Turno</Button>
+            <Button variant="primary" size="lg" onClick={() => endTurn()}>➡ Fine Turno</Button>
           </div>
         )}
       </Modal>

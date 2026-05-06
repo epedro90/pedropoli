@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
 import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import Timer from '../../components/Timer'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
 import { getShuffledCards } from './data'
 import { GamePhase, TabooCard, TabooConfig, TabooPlayer } from './types'
 import styles from './TabooSprint.module.css'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
 
 const DEFAULT_CONFIG: TabooConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -29,19 +31,14 @@ export default function TabooSprint() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null)
   const [timerRunning, setTimerRunning] = useState(false)
   const [turnKey, setTurnKey] = useState(0)
-  const feedbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const totalTurns = Math.min(cards.length, config.players.length * config.roundsPerPlayer)
+  const [totalTurns, setTotalTurns] = useState(0)
+  const feedbackTimer = useSafeTimeout()
+  const { onTick } = useCountdownSound()
   const activePlayer = players[currentPlayerIdx]
   const currentCard = cards[cardIndex]
 
-  const clearFeedbackTimer = () => {
-    if (feedbackRef.current) clearTimeout(feedbackRef.current)
-    feedbackRef.current = null
-  }
-
   const finishTurn = useCallback(() => {
-    clearFeedbackTimer()
+    feedbackTimer.clear()
     setFeedback(null)
     setSkipsLeft(config.maxSkips)
 
@@ -58,11 +55,13 @@ export default function TabooSprint() {
       setTurnKey(prevKey => prevKey + 1)
       return nextTurn
     })
-  }, [cardIndex, cards.length, config.maxSkips, players.length, totalTurns])
+  }, [cardIndex, cards.length, config.maxSkips, feedbackTimer, players.length, totalTurns])
 
   const startGame = () => {
+    feedbackTimer.clear()
     const shuffled = getShuffledCards(config.cardsPerGame)
     setCards(shuffled)
+    setTotalTurns(Math.min(shuffled.length, config.players.length * config.roundsPerPlayer))
     setPlayers(config.players.map((name, i) => ({
       id: `p${i}`,
       name,
@@ -97,8 +96,8 @@ export default function TabooSprint() {
     }
 
     setFeedback({ type, title, message })
-    clearFeedbackTimer()
-    feedbackRef.current = setTimeout(() => {
+    feedbackTimer.clear()
+    feedbackTimer.set(() => {
       setFeedback(null)
       if (cardIndex + 1 >= cards.length) {
         setTimerRunning(false)
@@ -107,9 +106,9 @@ export default function TabooSprint() {
       }
       setCardIndex(prev => prev + 1)
     }, nextDelay)
-  }, [cardIndex, cards.length, currentCard, currentPlayerIdx])
+  }, [cardIndex, cards.length, currentCard, currentPlayerIdx, feedbackTimer])
 
-  const handleCorrect = () => {
+  const handleCorrect = useCallback(() => {
     if (!currentCard || !timerRunning || feedback) return
     resolveCard(
       'success',
@@ -119,9 +118,9 @@ export default function TabooSprint() {
       `${currentCard.answer} era la risposta giusta.`,
       850,
     )
-  }
+  }, [currentCard, feedback, resolveCard, timerRunning])
 
-  const handleTaboo = () => {
+  const handleTaboo = useCallback(() => {
     if (!currentCard || !timerRunning || feedback) return
     resolveCard(
       'error',
@@ -131,9 +130,9 @@ export default function TabooSprint() {
       `Hai usato una parola vietata. La risposta era ${currentCard.answer}.`,
       850,
     )
-  }
+  }, [currentCard, feedback, resolveCard, timerRunning])
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     if (!currentCard || !timerRunning || feedback || skipsLeft <= 0) return
     setSkipsLeft(prev => prev - 1)
     resolveCard(
@@ -144,13 +143,24 @@ export default function TabooSprint() {
       `Hai saltato ${currentCard.answer}.`,
       650,
     )
-  }
+  }, [currentCard, feedback, resolveCard, skipsLeft, timerRunning])
+
+  const currentPoints = currentCard ? 1 : 0
 
   useEffect(() => {
-    return () => {
-      clearFeedbackTimer()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+
+      if (event.key === '1') handleCorrect()
+      if (event.key === '2') handleTaboo()
+      if (event.key === '3') handleSkip()
     }
-  }, [])
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleCorrect, handleSkip, handleTaboo])
+
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -243,7 +253,7 @@ export default function TabooSprint() {
           />
 
           <Button variant="warning" size="xl" fullWidth glow onClick={startGame}>
-            ▶ Inizia il Sprint
+            ▶ Inizia lo Sprint
           </Button>
         </div>
       </div>
@@ -282,13 +292,11 @@ export default function TabooSprint() {
     )
   }
 
-  const currentPoints = currentCard ? 1 : 0
-
   return (
     <div className={styles.page}>
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verra persa.')) navigate('/') }}>
+          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
             ← Home
           </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--red)" title="Classifica" />
@@ -319,6 +327,7 @@ export default function TabooSprint() {
                 duration={config.turnTime}
                 running={timerRunning}
                 onTimeUp={finishTurn}
+            onTick={onTick}
                 warningAt={10}
                 size="sm"
                 showProgress={false}
@@ -362,14 +371,17 @@ export default function TabooSprint() {
           )}
 
           <div className={styles.guessActions}>
-            <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning}>
-              Indovinata
+            <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning || !!feedback}>
+              ✅ Indovinata <span className={styles.keyHint}>[1]</span>
             </Button>
-            <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning}>
-              Errore
+            <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning || !!feedback}>
+              ❌ Taboo <span className={styles.keyHint}>[2]</span>
             </Button>
-            <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0}>
-              Skip ({skipsLeft})
+            <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0 || !!feedback}>
+              ⏭ Skip ({skipsLeft}) <span className={styles.keyHint}>[3]</span>
+            </Button>
+            <Button variant="ghost" size="lg" type="button" onClick={() => setTimerRunning(r => !r)}>
+              {timerRunning ? '⏸ Pausa' : '▶ Riprendi'}
             </Button>
           </div>
 
@@ -384,3 +396,5 @@ export default function TabooSprint() {
     </div>
   )
 }
+
+

@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
 import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import Timer from '../../components/Timer'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
 import { getShuffledCards } from './data'
 import { FalseCard, GamePhase, IlFalsoConfig, IlFalsoPlayer } from './types'
 import styles from './IlFalso.module.css'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
 
 const DEFAULT_CONFIG: IlFalsoConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -25,19 +27,17 @@ export default function IlFalso() {
   const [players, setPlayers] = useState<IlFalsoPlayer[]>([])
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null)
+  const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null)
   const [timerRunning, setTimerRunning] = useState(false)
   const [awaitingStart, setAwaitingStart] = useState(false)
   const [turnKey, setTurnKey] = useState(0)
-  const feedbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackTimer = useSafeTimeout()
+  const { onTick } = useCountdownSound()
+  const revealTimer = useSafeTimeout()
 
   const totalTurns = config.players.length * config.roundsPerPlayer
   const activePlayer = players[currentPlayerIdx]
   const currentCard = cards[cardIndex]
-
-  const clearFeedbackTimer = () => {
-    if (feedbackRef.current) clearTimeout(feedbackRef.current)
-    feedbackRef.current = null
-  }
 
   const beginTurn = useCallback((playerIdx: number, turnNumber: number) => {
     setCards(getShuffledCards(config.cardsPerTurn))
@@ -51,6 +51,7 @@ export default function IlFalso() {
   }, [config.cardsPerTurn])
 
   const startGame = () => {
+    feedbackTimer.clear()
     setPlayers(config.players.map((name, i) => ({
       id: `p${i}`,
       name,
@@ -69,10 +70,31 @@ export default function IlFalso() {
     setPhase('playing')
   }
 
-  const finishTurn = useCallback(() => {
-    clearFeedbackTimer()
+  const finishTurn = useCallback((fromTimeUp = false) => {
+    feedbackTimer.clear()
+    revealTimer.clear()
     setFeedback(null)
     setTimerRunning(false)
+
+    if (fromTimeUp && cards[cardIndex]) {
+      const falseStatement = cards[cardIndex].statements[cards[cardIndex].falseIndex]
+      setRevealedAnswer(falseStatement)
+      revealTimer.set(() => {
+        setRevealedAnswer(null)
+        if (turnIndex + 1 >= totalTurns) {
+          setAwaitingStart(false)
+          setPhase('results')
+          return
+        }
+        const nextPlayerIdx = (currentPlayerIdx + 1) % players.length
+        setCurrentPlayerIdx(nextPlayerIdx)
+        setCardIndex(0)
+        setCards([])
+        setAwaitingStart(true)
+        setTurnIndex(prev => prev + 1)
+      }, 3000)
+      return
+    }
 
     if (turnIndex + 1 >= totalTurns) {
       setAwaitingStart(false)
@@ -86,7 +108,7 @@ export default function IlFalso() {
     setCards([])
     setAwaitingStart(true)
     setTurnIndex(prev => prev + 1)
-  }, [currentPlayerIdx, players.length, totalTurns, turnIndex])
+  }, [cardIndex, cards, currentPlayerIdx, feedbackTimer, players.length, revealTimer, totalTurns, turnIndex])
 
   const resolveCard = useCallback((isCorrect: boolean) => {
     if (!currentCard || feedback) return
@@ -107,7 +129,7 @@ export default function IlFalso() {
         ? {
             type: 'success',
             title: 'Giusta! +1',
-            message: 'Hai trovato l affermazione inventata.',
+            message: "Hai trovato l'affermazione inventata.",
           }
         : {
             type: 'error',
@@ -116,8 +138,8 @@ export default function IlFalso() {
           }
     )
 
-    clearFeedbackTimer()
-    feedbackRef.current = setTimeout(() => {
+    feedbackTimer.clear()
+    feedbackTimer.set(() => {
       setFeedback(null)
       if (cardIndex + 1 >= cards.length) {
         finishTurn()
@@ -125,18 +147,28 @@ export default function IlFalso() {
       }
       setCardIndex(prev => prev + 1)
     }, 800)
-  }, [cardIndex, cards.length, currentCard, currentPlayerIdx, feedback, finishTurn])
+  }, [cardIndex, cards.length, currentCard, currentPlayerIdx, feedback, feedbackTimer, finishTurn])
 
-  const handleChoice = (index: number) => {
+  const handleChoice = useCallback((index: number) => {
     if (!currentCard || !timerRunning || feedback) return
     resolveCard(index === currentCard.falseIndex)
-  }
+  }, [currentCard, feedback, resolveCard, timerRunning])
+
 
   useEffect(() => {
-    return () => {
-      clearFeedbackTimer()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (!timerRunning || feedback || !currentCard) return
+
+      const choiceMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 }
+      const selected = choiceMap[event.key.toLowerCase()]
+      if (selected !== undefined) handleChoice(selected)
     }
-  }, [])
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentCard, feedback, handleChoice, timerRunning])
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -151,11 +183,11 @@ export default function IlFalso() {
         <div className={styles.setupCard}>
           <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
           <h1 className={styles.gameTitle}>Il Falso</h1>
-          <p className={styles.gameSub}>Trova l affermazione inventata</p>
+          <p className={styles.gameSub}>Trova l'affermazione inventata</p>
 
           <div className={styles.ruleBox}>
             <p>
-              <strong>Regola:</strong> tra quattro affermazioni una sola e falsa.
+              <strong>Regola:</strong> tra quattro affermazioni una sola è falsa.
               Premi quella giusta prima che finisca il tempo del tuo turno.
             </p>
           </div>
@@ -257,7 +289,7 @@ export default function IlFalso() {
     <div className={styles.page}>
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verra persa.')) navigate('/') }}>
+          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
             ← Home
           </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--violet)" title="Classifica" />
@@ -283,7 +315,8 @@ export default function IlFalso() {
                 key={turnKey}
                 duration={config.turnTime}
                 running={timerRunning}
-                onTimeUp={finishTurn}
+                onTimeUp={() => finishTurn(true)}
+            onTick={onTick}
                 warningAt={10}
                 size="sm"
                 showProgress={false}
@@ -315,7 +348,7 @@ export default function IlFalso() {
                 feedback?.type === 'error' ? styles.error : '',
               ].filter(Boolean).join(' ')}>
                 <p className={styles.questionLabel}>Trova il falso</p>
-                <h2 className={styles.questionText}>Quale affermazione e falsa?</h2>
+                <h2 className={styles.questionText}>Quale affermazione è falsa?</h2>
                 <div className={styles.statementList}>
                   {currentCard?.statements.map((statement, idx) => (
                     <button
@@ -325,7 +358,10 @@ export default function IlFalso() {
                       onClick={() => handleChoice(idx)}
                       disabled={!timerRunning || !!feedback}
                     >
-                      <span className={styles.statementBadge}>{String.fromCharCode(65 + idx)}</span>
+                      <span className={styles.statementBadge}>
+                        {String.fromCharCode(65 + idx)}
+                        <span className={styles.statementKey}>[{String.fromCharCode(65 + idx)}]</span>
+                      </span>
                       <span className={styles.statementText}>{statement}</span>
                     </button>
                   ))}
@@ -342,6 +378,12 @@ export default function IlFalso() {
                   <span>{feedback.message}</span>
                 </div>
               )}
+              {revealedAnswer && (
+                <div className={[styles.feedback, styles.errorBox].join(' ')}>
+                  <strong>⏰ Tempo scaduto! Il falso era:</strong>
+                  <span>{revealedAnswer}</span>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -349,3 +391,5 @@ export default function IlFalso() {
     </div>
   )
 }
+
+

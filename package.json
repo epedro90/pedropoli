@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --base /pedropoli/",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "tsc -p tsconfig.test.json && node .test-dist/tests/run-tests.js",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist"
   },

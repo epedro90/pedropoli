@@ -5,23 +5,26 @@ import { ThemeProvider, useTheme, Theme } from '../context/ThemeContext'
 const THEME_OPTIONS: { value: Theme; icon: string; label: string }[] = [
   { value: 'arcade', icon: '🕹️', label: 'Arcade' },
   { value: 'modern', icon: '✨', label: 'Modern' },
-  { value: 'ember',  icon: '🔥', label: 'Ember'  },
+  { value: 'ember', icon: '🔥', label: 'Ember' },
 ]
 
 function ThemeSelect() {
   const { theme, setTheme } = useTheme()
-  const current = THEME_OPTIONS.find(o => o.value === theme)!
+  const current = THEME_OPTIONS.find(option => option.value === theme) ?? THEME_OPTIONS[0]
+
   return (
     <div className={styles.themeSelect}>
       <span className={styles.themeIcon}>{current.icon}</span>
       <select
         className={styles.themeDropdown}
         value={theme}
-        onChange={e => setTheme(e.target.value as Theme)}
+        onChange={event => setTheme(event.target.value as Theme)}
         aria-label="Seleziona tema"
       >
-        {THEME_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.icon} {o.label}</option>
+        {THEME_OPTIONS.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.icon} {option.label}
+          </option>
         ))}
       </select>
     </div>

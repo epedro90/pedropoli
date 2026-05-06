@@ -64,7 +64,7 @@ export default function PlayerSetup({
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && add()}
-            placeholder={`Aggiungi ${label.toLowerCase()}…`}
+            placeholder={`Aggiungi ${label.toLowerCase()}...`}
           />
           <Button variant="secondary" size="sm" onClick={add}>+ Aggiungi</Button>
         </div>

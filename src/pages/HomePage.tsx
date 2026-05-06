@@ -2,6 +2,8 @@ import { GAMES } from '../types/game'
 import GameCard from '../components/GameCard'
 import styles from './HomePage.module.css'
 
+const DECORATIONS = ['🎯', '🏆', '⭐', '🎮', '🎉', '🔥', '💫', '🎊']
+
 export default function HomePage() {
   return (
     <div className={styles.page}>
@@ -19,13 +21,16 @@ export default function HomePage() {
         </div>
 
         <div className={styles.decorRow}>
-          {['🎯', '🏆', '⭐', '🎮', '🎉', '🔥', '💫', '🎊'].map((e, i) => (
-            <span key={i} className={styles.decorEmoji} style={{ animationDelay: `${i * 0.3}s` }}>{e}</span>
+          {DECORATIONS.map((emoji, index) => (
+            <span key={emoji} className={styles.decorEmoji} style={{ animationDelay: `${index * 0.3}s` }}>
+              {emoji}
+            </span>
           ))}
         </div>
 
         <p className={styles.subtitle}>
-          Sfida i tuoi amici con giochi esclusivi ispirati ai più grandi quiz show televisivi!<br />
+          Sfida i tuoi amici con giochi esclusivi ispirati ai più grandi quiz show televisivi!
+          <br />
           <span className={styles.subtitleHighlight}>Scegli un gioco e che la festa abbia inizio! 🎉</span>
         </p>
       </header>
@@ -37,8 +42,8 @@ export default function HomePage() {
           <span className={styles.sectionDecor}>◂</span>
         </div>
         <div className={styles.grid}>
-          {GAMES.map((game, idx) => (
-            <GameCard key={game.id} game={game} index={idx} />
+          {GAMES.map((game, index) => (
+            <GameCard key={game.id} game={game} index={index} />
           ))}
         </div>
       </section>
@@ -46,7 +51,7 @@ export default function HomePage() {
       <footer className={styles.footer}>
         <div className={styles.footerDivider} />
         <p className={styles.footerText}>
-          🎲 <strong>Pedropoli</strong> — Il party game show dei tuoi sogni
+          🎲 <strong>Pedropoli</strong> - Il party game show dei tuoi sogni
         </p>
         <p className={styles.footerSub}>Realizzato con ❤️ per le serate tra amici</p>
       </footer>

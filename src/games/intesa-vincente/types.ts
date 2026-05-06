@@ -11,7 +11,6 @@ export interface IntesaConfig {
   teams: Team[]
   timerDuration: number
   maxSkips: number
-  wordsPerTurn: number
 }
 
 export interface TurnState {

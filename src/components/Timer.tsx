@@ -43,15 +43,14 @@ export default function Timer({
   }, [onTick, onTimeUp])
 
   useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
     if (running && remaining > 0) {
       intervalRef.current = setInterval(tick, 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [running, remaining, tick])
+  }, [running, tick])
 
   const pct = Math.max(0, (remaining / duration) * 100)
   const isWarning = remaining <= warningAt && remaining > 0
@@ -78,7 +77,12 @@ export default function Timer({
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className={[styles.timer, styles[size], isWarning ? styles.warning : '', isExpired ? styles.expired : ''].filter(Boolean).join(' ')}>
+    <div
+      className={[styles.timer, styles[size], isWarning ? styles.warning : '', isExpired ? styles.expired : ''].filter(Boolean).join(' ')}
+      role="timer"
+      aria-live={running ? 'polite' : 'off'}
+      aria-label={`Tempo rimanente: ${display}`}
+    >
       {showProgress && (
         <svg className={styles.ring} width={svgSize} height={svgSize}>
           <circle

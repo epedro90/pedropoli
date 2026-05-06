@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+﻿import { useCallback, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
 import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import Timer from '../../components/Timer'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
 import { getShuffledCards } from './data'
+import { getVisibleClues, normalizeGuess, scoreForClues } from './logic'
 import { ChiSonoCard, ChiSonoConfig, ChiSonoPlayer, GamePhase } from './types'
 import styles from './ChiSono.module.css'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
 
 const DEFAULT_CONFIG: ChiSonoConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -14,18 +17,6 @@ const DEFAULT_CONFIG: ChiSonoConfig = {
   roundsPerPlayer: 1,
   maxSkips: 2,
   cardsPerGame: 18,
-}
-
-const scoreForClues = (revealedClues: number, totalClues: number) => {
-  return Math.max(1, totalClues - revealedClues + 1)
-}
-
-const normalizeGuess = (value: string) => {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase()
 }
 
 export default function ChiSono() {
@@ -45,18 +36,15 @@ export default function ChiSono() {
   const [paused, setPaused] = useState(false)
   const [awaitingStart, setAwaitingStart] = useState(false)
   const [turnKey, setTurnKey] = useState(0)
-  const feedbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackTimer = useSafeTimeout()
+  const { onTick } = useCountdownSound()
 
   const totalTurns = config.players.length * config.roundsPerPlayer
   const activePlayer = players[currentPlayerIdx]
   const currentCard = cards[cardIndex]
 
-  const clearFeedbackTimer = () => {
-    if (feedbackRef.current) clearTimeout(feedbackRef.current)
-    feedbackRef.current = null
-  }
-
   const startGame = () => {
+    feedbackTimer.clear()
     setPlayers(config.players.map((name, i) => ({
       id: `p${i}`,
       name,
@@ -94,7 +82,7 @@ export default function ChiSono() {
   }, [config.cardsPerGame, config.maxSkips])
 
   const finishTurn = useCallback(() => {
-    clearFeedbackTimer()
+    feedbackTimer.clear()
     setFeedback(null)
     setGuess('')
     setClueIndex(1)
@@ -114,14 +102,14 @@ export default function ChiSono() {
     setPaused(false)
     setAwaitingStart(true)
     setTurnIndex(prev => prev + 1)
-  }, [config.maxSkips, currentPlayerIdx, players.length, totalTurns, turnIndex])
+  }, [config.maxSkips, currentPlayerIdx, feedbackTimer, players.length, totalTurns, turnIndex])
 
   const advanceCard = useCallback(() => {
     if (!currentCard) return
     const isLastCard = cardIndex + 1 >= cards.length
 
     if (isLastCard) {
-      clearFeedbackTimer()
+      feedbackTimer.clear()
       setFeedback(null)
       setGuess('')
       setClueIndex(1)
@@ -133,7 +121,7 @@ export default function ChiSono() {
     setClueIndex(1)
     setGuess('')
     setFeedback(null)
-  }, [cardIndex, cards.length, currentCard, finishTurn])
+  }, [cardIndex, cards.length, currentCard, feedbackTimer, finishTurn])
 
   const handleCorrect = useCallback(() => {
     if (!currentCard) return
@@ -148,11 +136,11 @@ export default function ChiSono() {
       title: `Corretto! +${points}`,
       message: `${currentCard.answer} era la risposta giusta.`,
     })
-    clearFeedbackTimer()
-    feedbackRef.current = setTimeout(() => {
+    feedbackTimer.clear()
+    feedbackTimer.set(() => {
       advanceCard()
     }, 900)
-  }, [advanceCard, clueIndex, currentCard, currentPlayerIdx])
+  }, [advanceCard, clueIndex, currentCard, currentPlayerIdx, feedbackTimer])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -171,12 +159,12 @@ export default function ChiSono() {
       type: 'error',
       title: 'Sbagliato',
       message: clueIndex < currentCard.clues.length
-        ? 'Ti abbiamo sbloccato un indizio in piu.'
-        : 'Hai gia aperto tutti gli indizi disponibili.',
+        ? 'Ti abbiamo sbloccato un indizio in più.'
+        : 'Hai già aperto tutti gli indizi disponibili.',
     })
     setGuess('')
-    clearFeedbackTimer()
-    feedbackRef.current = setTimeout(() => setFeedback(null), 900)
+    feedbackTimer.clear()
+    feedbackTimer.set(() => setFeedback(null), 900)
   }
 
   const handleSkip = () => {
@@ -187,17 +175,12 @@ export default function ChiSono() {
       title: 'Passa',
       message: `La risposta era ${currentCard.answer}.`,
     })
-    clearFeedbackTimer()
-    feedbackRef.current = setTimeout(() => {
+    feedbackTimer.clear()
+    feedbackTimer.set(() => {
       advanceCard()
     }, 700)
   }
 
-  useEffect(() => {
-    return () => {
-      clearFeedbackTimer()
-    }
-  }, [])
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -324,7 +307,7 @@ export default function ChiSono() {
     )
   }
 
-  const visibleClues = currentCard?.clues.slice(0, clueIndex) ?? []
+  const visibleClues = currentCard ? getVisibleClues(currentCard.clues, clueIndex) : []
   const cluePoints = currentCard ? scoreForClues(clueIndex, currentCard.clues.length) : 0
 
   /* ===== PLAYING ===== */
@@ -332,7 +315,7 @@ export default function ChiSono() {
     <div className={styles.page}>
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verra persa.')) navigate('/') }}>
+          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
             ← Home
           </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--yellow)" title="Classifica" />
@@ -361,6 +344,7 @@ export default function ChiSono() {
                 duration={config.turnTime}
                 running={timerRunning && !paused}
                 onTimeUp={finishTurn}
+            onTick={onTick}
                 warningAt={10}
                 size="sm"
                 showProgress={false}
@@ -402,9 +386,9 @@ export default function ChiSono() {
                     </div>
                   ))}
                   {currentCard?.clues.slice(clueIndex).map((_, idx) => (
-                    <div key={`hidden-${idx}`} className={[styles.clueRow, styles.hiddenClue].join(' ')}>
+                    <div key={`hidden-${idx}`} className={[styles.clueRow, styles.hiddenClue].join(' ')} aria-hidden="true">
                       <span className={styles.clueIndex}>#{clueIndex + idx + 1}</span>
-                      <span className={styles.clueText}>Indizio nascosto</span>
+                      <span className={styles.clueText}>🔒 Si sblocca con una risposta sbagliata</span>
                     </div>
                   ))}
                 </div>
@@ -449,3 +433,6 @@ export default function ChiSono() {
     </div>
   )
 }
+
+
+

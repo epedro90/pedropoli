@@ -29,6 +29,11 @@
   transform: translateY(0px) scale(0.97);
 }
 
+.btn:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+
 .inner {
   position: relative;
   z-index: 1;
@@ -136,4 +141,19 @@
 
 .glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+
+  .btn:not(:disabled):hover,
+  .btn:not(:disabled):active {
+    transform: none;
+  }
+
+  .glow {
+    animation: none;
+  }
 }

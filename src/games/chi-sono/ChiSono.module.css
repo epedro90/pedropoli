@@ -224,8 +224,11 @@
 }
 
 .hiddenClue {
-  opacity: 0.5;
+  opacity: 0.35;
   border-style: dashed;
+  cursor: default;
+  pointer-events: none;
+  filter: blur(0.5px);
 }
 
 .clueIndex {

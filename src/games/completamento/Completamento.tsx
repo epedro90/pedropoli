@@ -6,6 +6,8 @@ import Button from '../../components/Button'
 import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import PlayerSetup from '../../components/PlayerSetup'
 import styles from './Completamento.module.css'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
+
 
 const DEFAULT_CONFIG: CompletamentoConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -27,9 +29,11 @@ export default function Completamento() {
   const [timerRunning, setTimerRunning] = useState(false)
   const [feedback, setFeedback] = useState<'correct' | 'skip' | null>(null)
   const [paused, setPaused] = useState(false)
+  const [lastCorrectPlayer, setLastCorrectPlayer] = useState<number | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { onTick } = useCountdownSound()
 
   const startGame = () => {
     const qs = getShuffledQuestions(config.maxQuestions)
@@ -42,10 +46,38 @@ export default function Completamento() {
     setRevealedIndexes([])
     setTimerRunning(true)
     setPaused(false)
+    setLastCorrectPlayer(null)
     setPhase('playing')
   }
 
   const activePlayer = players[currentPlayerIdx]
+
+  const advancePlayer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (revealRef.current) clearInterval(revealRef.current)
+    setFeedback(null)
+    setRevealedIndexes([])
+
+    // Find next non-eliminated player
+    const nextIdx = (() => {
+      let idx = (currentPlayerIdx + 1) % players.length
+      let loops = 0
+      while (players[idx]?.isEliminated && loops < players.length) {
+        idx = (idx + 1) % players.length
+        loops++
+      }
+      return idx
+    })()
+
+    const activePlayers = players.filter(p => !p.isEliminated && p.timeLeft > 0)
+    if (activePlayers.length <= 1) {
+      setPhase('results')
+      return
+    }
+
+    setCurrentPlayerIdx(nextIdx)
+    setQuestionIndex(qi => qi + 1)
+  }, [currentPlayerIdx, players])
 
   const getRevealableIndexes = useCallback((word: string) => {
     return word
@@ -77,6 +109,7 @@ export default function Completamento() {
         const updated = prev.map((p, i) => {
           if (i !== currentPlayerIdx) return p
           const newTime = p.timeLeft - 1
+          onTick(newTime)
           if (newTime <= 0) return { ...p, timeLeft: 0, isEliminated: true }
           return { ...p, timeLeft: newTime }
         })
@@ -94,7 +127,7 @@ export default function Completamento() {
       if (timerRef.current) clearInterval(timerRef.current)
       advancePlayer()
     }
-  }, [players, currentPlayerIdx, timerRunning])
+  }, [players, currentPlayerIdx, timerRunning, advancePlayer])
 
   // Letter reveal interval
   useEffect(() => {
@@ -114,35 +147,9 @@ export default function Completamento() {
     return () => { if (revealRef.current) clearInterval(revealRef.current) }
   }, [timerRunning, paused, questionIndex, questions, config.revealInterval, getRevealableIndexes])
 
-  const advancePlayer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    if (revealRef.current) clearInterval(revealRef.current)
-    setFeedback(null)
-    setRevealedIndexes([])
-
-    // Find next non-eliminated player
-    const nextIdx = (() => {
-      let idx = (currentPlayerIdx + 1) % players.length
-      let loops = 0
-      while (players[idx]?.isEliminated && loops < players.length) {
-        idx = (idx + 1) % players.length
-        loops++
-      }
-      return idx
-    })()
-
-    const activePlayers = players.filter(p => !p.isEliminated && p.timeLeft > 0)
-    if (activePlayers.length <= 1) {
-      setPhase('results')
-      return
-    }
-
-    setCurrentPlayerIdx(nextIdx)
-    setQuestionIndex(qi => qi + 1)
-  }, [currentPlayerIdx, players])
-
   const handleCorrect = () => {
     setFeedback('correct')
+    setLastCorrectPlayer(currentPlayerIdx)
     setPlayers(prev => prev.map((p, i) =>
       i === currentPlayerIdx ? { ...p, score: p.score + 1 } : p
     ))
@@ -152,8 +159,12 @@ export default function Completamento() {
     }, 700)
   }
 
-  const handleError = () => {
-    // Nothing forced — conductor decides
+  const handleUndo = () => {
+    if (lastCorrectPlayer === null) return
+    setPlayers(prev => prev.map((p, i) =>
+      i === lastCorrectPlayer ? { ...p, score: Math.max(0, p.score - 1) } : p
+    ))
+    setLastCorrectPlayer(null)
   }
 
   const handleSkip = () => {
@@ -308,10 +319,12 @@ export default function Completamento() {
 
           <div className={styles.actionGrid}>
             <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
-            <Button variant="danger" size="xl" onClick={handleError}>❌ Errore</Button>
             <Button variant="warning" size="lg" onClick={handleSkip}>⏭ Salta</Button>
             <Button variant="ghost" size="lg" onClick={() => setPaused(p => !p)}>
               {paused ? '▶ Riprendi' : '⏸ Pausa'}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleUndo} disabled={lastCorrectPlayer === null}>
+              ↩ Annulla ultimo punto
             </Button>
           </div>
         </div>

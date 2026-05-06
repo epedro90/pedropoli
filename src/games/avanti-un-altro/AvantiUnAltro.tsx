@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GamePhase, AvantiConfig, PlayerResult } from './types'
 import { getShuffledQuestions } from './data'
@@ -7,6 +7,9 @@ import Button from '../../components/Button'
 import Timer from '../../components/Timer'
 import styles from './AvantiUnAltro.module.css'
 import PlayerSetup from '../../components/PlayerSetup'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
+import { isWrongAnswer, rankResults } from './logic'
+import { useCountdownSound } from '../../hooks/useCountdownSound'
 
 const DEFAULT_CONFIG: AvantiConfig = {
   players: ['Giocatore 1', 'Giocatore 2'],
@@ -14,94 +17,159 @@ const DEFAULT_CONFIG: AvantiConfig = {
   questionsCount: 21,
 }
 
+interface GameState {
+  questions: Question[]
+  playerIndex: number
+  questionIndex: number
+  timerRunning: boolean
+  timerKey: number
+  results: PlayerResult[]
+  feedback: 'correct' | 'wrong' | null
+  startTime: number
+  resetAnim: boolean
+}
+
+type Action =
+  | { type: 'START'; questions: Question[] }
+  | { type: 'START_TIMER'; now: number }
+  | { type: 'SET_FEEDBACK'; feedback: 'correct' | 'wrong' | null }
+  | { type: 'NEXT_QUESTION' }
+  | { type: 'RESET_QUESTION' }
+  | { type: 'COMPLETE_PLAYER'; result: PlayerResult; isLast: boolean }
+  | { type: 'CLEAR_RESET_ANIM' }
+
+const INITIAL_STATE: GameState = {
+  questions: [],
+  playerIndex: 0,
+  questionIndex: 0,
+  timerRunning: false,
+  timerKey: 0,
+  results: [],
+  feedback: null,
+  startTime: 0,
+  resetAnim: false,
+}
+
+function reducer(state: GameState, action: Action): GameState {
+  switch (action.type) {
+    case 'START':
+      return {
+        ...INITIAL_STATE,
+        timerKey: state.timerKey + 1,
+        questions: action.questions,
+      }
+    case 'START_TIMER':
+      return { ...state, timerRunning: true, startTime: action.now }
+    case 'SET_FEEDBACK':
+      return {
+        ...state,
+        feedback: action.feedback,
+        resetAnim: action.feedback === 'correct',
+      }
+    case 'NEXT_QUESTION':
+      return { ...state, feedback: null, questionIndex: state.questionIndex + 1 }
+    case 'RESET_QUESTION':
+      return { ...state, feedback: null, resetAnim: false, questionIndex: 0 }
+    case 'COMPLETE_PLAYER': {
+      const newResults = [...state.results, action.result]
+      if (action.isLast) {
+        return { ...state, timerRunning: false, results: newResults, feedback: null }
+      }
+      return {
+        ...state,
+        timerRunning: false,
+        results: newResults,
+        feedback: null,
+        playerIndex: state.playerIndex + 1,
+        questionIndex: 0,
+        timerKey: state.timerKey + 1,
+      }
+    }
+    case 'CLEAR_RESET_ANIM':
+      return { ...state, resetAnim: false }
+    default:
+      return state
+  }
+}
+
 export default function AvantiUnAltro() {
   const navigate = useNavigate()
-  const [phase, setPhase] = useState<GamePhase>('setup')
-  const [config, setConfig] = useState<AvantiConfig>(DEFAULT_CONFIG)
+  const [phase, setPhase] = useReducer(
+    (_: GamePhase, next: GamePhase) => next,
+    'setup' as GamePhase
+  )
+  const [config, setConfig] = useReducer(
+    (prev: AvantiConfig, patch: Partial<AvantiConfig>) => ({ ...prev, ...patch }),
+    DEFAULT_CONFIG
+  )
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const feedbackTimer = useSafeTimeout()
+  const { onTick } = useCountdownSound()
 
-  // Game state
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [playerIndex, setPlayerIndex] = useState(0)
-  const [questionIndex, setQuestionIndex] = useState(0)
-  const [timerRunning, setTimerRunning] = useState(false)
-  const [timerKey, setTimerKey] = useState(0)
-  const [results, setResults] = useState<PlayerResult[]>([])
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null)
-  const [startTime, setStartTime] = useState(0)
-  const [resetAnim, setResetAnim] = useState(false)
   const startGame = () => {
-    const qs = getShuffledQuestions(config.questionsCount)
-    setQuestions(qs)
-    setPlayerIndex(0)
-    setQuestionIndex(0)
-    setResults([])
-    setTimerRunning(false)
-    setTimerKey(k => k + 1)
+    feedbackTimer.clear()
+    dispatch({ type: 'START', questions: getShuffledQuestions(config.questionsCount) })
     setPhase('playing')
   }
 
-  const startTimer = () => {
-    setStartTime(Date.now())
-    setTimerRunning(true)
-  }
+  const completePlayer = useCallback((completed: boolean) => {
+    feedbackTimer.clear()
+    const elapsed = completed
+      ? Math.round((Date.now() - state.startTime) / 1000)
+      : config.timerDuration
+    const result: PlayerResult = {
+      name: config.players[state.playerIndex],
+      completed,
+      timeUsed: elapsed,
+      maxQuestion: state.questionIndex + 1,
+    }
+    const isLast = state.playerIndex + 1 >= config.players.length
+    dispatch({ type: 'COMPLETE_PLAYER', result, isLast })
+    if (isLast) setPhase('results')
+  }, [feedbackTimer, config.timerDuration, config.players, state.playerIndex, state.questionIndex, state.startTime])
 
-  const handleAnswer = (choice: 'A' | 'B') => {
-    if (!timerRunning || feedback) return
-    const q = questions[questionIndex]
-    const isWrong = choice !== q.correctAnswer
+  const handleAnswer = useCallback((choice: 'A' | 'B') => {
+    if (!state.timerRunning || state.feedback) return
+    const q = state.questions[state.questionIndex]
+    const isWrong = isWrongAnswer(choice, q.correctAnswer)
 
     if (isWrong) {
-      // Good! Player gave wrong answer → advance
-      setFeedback('wrong')
-      setTimeout(() => {
-        setFeedback(null)
-        if (questionIndex + 1 >= config.questionsCount) {
-          // Completed all questions!
+      dispatch({ type: 'SET_FEEDBACK', feedback: 'wrong' })
+      feedbackTimer.set(() => {
+        if (state.questionIndex + 1 >= config.questionsCount) {
           completePlayer(true)
         } else {
-          setQuestionIndex(qi => qi + 1)
+          dispatch({ type: 'NEXT_QUESTION' })
         }
       }, 600)
     } else {
-      // Bad! Player gave correct answer → reset to question 1
-      setFeedback('correct')
-      setResetAnim(true)
-      setTimeout(() => {
-        setFeedback(null)
-        setResetAnim(false)
-        setQuestionIndex(0)
+      dispatch({ type: 'SET_FEEDBACK', feedback: 'correct' })
+      feedbackTimer.set(() => {
+        dispatch({ type: 'RESET_QUESTION' })
       }, 900)
     }
-  }
-
-  const completePlayer = useCallback((completed: boolean) => {
-    const elapsed = completed ? Math.round((Date.now() - startTime) / 1000) : config.timerDuration
-    const result: PlayerResult = {
-      name: config.players[playerIndex],
-      completed,
-      timeUsed: elapsed,
-      maxQuestion: questionIndex + 1,
-    }
-    const newResults = [...results, result]
-    setResults(newResults)
-    setTimerRunning(false)
-
-    if (playerIndex + 1 >= config.players.length) {
-      setPhase('results')
-    } else {
-      setPlayerIndex(pi => pi + 1)
-      setQuestionIndex(0)
-      setTimerKey(k => k + 1)
-    }
-  }, [config.players, config.timerDuration, playerIndex, questionIndex, results, startTime])
+  }, [completePlayer, config.questionsCount, feedbackTimer, state.feedback, state.questionIndex, state.questions, state.timerRunning])
 
   const handleTimeUp = useCallback(() => {
+    feedbackTimer.clear()
     completePlayer(false)
-  }, [completePlayer])
+  }, [feedbackTimer, completePlayer])
 
-  const currentQ = questions[questionIndex]
-  const currentPlayer = config.players[playerIndex]
-  const progress = ((questionIndex) / config.questionsCount) * 100
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (!state.timerRunning || state.feedback) return
+      if (event.key.toLowerCase() === 'a') handleAnswer('A')
+      if (event.key.toLowerCase() === 'b') handleAnswer('B')
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [state.feedback, handleAnswer, state.timerRunning])
+
+  const currentQ = state.questions[state.questionIndex]
+  const currentPlayer = config.players[state.playerIndex]
+  const progress = (state.questionIndex / config.questionsCount) * 100
 
   /* ===== SETUP ===== */
   if (phase === 'setup') {
@@ -121,19 +189,19 @@ export default function AvantiUnAltro() {
               {[90, 120, 150, 180, 240].map(v => (
                 <button key={v}
                   className={[styles.chip, config.timerDuration === v ? styles.chipActive : ''].join(' ')}
-                  onClick={() => setConfig(c => ({ ...c, timerDuration: v }))}
+                  onClick={() => setConfig({ timerDuration: v })}
                 >{v}s</button>
               ))}
             </div>
           </div>
 
           <div className={styles.section}>
-            <label className={styles.label}>❓ Numero domande</label>
+            <label className={styles.label}>🔢 Numero domande</label>
             <div className={styles.numRow}>
               {[10, 15, 21].map(v => (
                 <button key={v}
                   className={[styles.chip, config.questionsCount === v ? styles.chipActive : ''].join(' ')}
-                  onClick={() => setConfig(c => ({ ...c, questionsCount: v }))}
+                  onClick={() => setConfig({ questionsCount: v })}
                 >{v}</button>
               ))}
             </div>
@@ -142,13 +210,13 @@ export default function AvantiUnAltro() {
           <PlayerSetup
             label="Giocatori"
             players={config.players}
-            onChange={players => setConfig(c => ({ ...c, players }))}
+            onChange={players => setConfig({ players })}
             min={1}
             max={6}
           />
 
           <Button variant="warning" size="xl" fullWidth glow onClick={startGame}>
-            🎯 Inizia la Sfida!
+            🏁 Inizia la Sfida!
           </Button>
         </div>
       </div>
@@ -157,14 +225,11 @@ export default function AvantiUnAltro() {
 
   /* ===== RESULTS ===== */
   if (phase === 'results') {
-    const completed = results.filter(r => r.completed)
-    const notCompleted = results.filter(r => !r.completed)
-    let winner: PlayerResult
-    if (completed.length > 0) {
-      winner = completed.sort((a, b) => a.timeUsed - b.timeUsed)[0]
-    } else {
-      winner = notCompleted.sort((a, b) => b.maxQuestion - a.maxQuestion)[0]
-    }
+    const completed = state.results.filter(r => r.completed)
+    const notCompleted = state.results.filter(r => !r.completed)
+    const winner = completed.length > 0
+      ? completed.sort((a, b) => a.timeUsed - b.timeUsed)[0]
+      : notCompleted.sort((a, b) => b.maxQuestion - a.maxQuestion)[0]
 
     return (
       <div className={styles.page}>
@@ -177,22 +242,15 @@ export default function AvantiUnAltro() {
           </p>
 
           <div className={styles.finalList}>
-            {[...results]
-              .sort((a, b) => {
-                if (a.completed && !b.completed) return -1
-                if (!a.completed && b.completed) return 1
-                if (a.completed && b.completed) return a.timeUsed - b.timeUsed
-                return b.maxQuestion - a.maxQuestion
-              })
-              .map((r, i) => (
-                <div key={r.name} className={[styles.finalRow, i === 0 ? styles.first : ''].join(' ')}>
-                  <span className={styles.finalRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
-                  <span className={styles.finalName}>{r.name}</span>
-                  <span className={styles.finalDetail}>
-                    {r.completed ? `✅ ${r.timeUsed}s` : `❌ Q.${r.maxQuestion}`}
-                  </span>
-                </div>
-              ))}
+            {rankResults(state.results).map((r, i) => (
+              <div key={r.name} className={[styles.finalRow, i === 0 ? styles.first : ''].join(' ')}>
+                <span className={styles.finalRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                <span className={styles.finalName}>{r.name}</span>
+                <span className={styles.finalDetail}>
+                  {r.completed ? `✅ ${r.timeUsed}s` : `❌ Q.${r.maxQuestion}`}
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className={styles.resultsBtns}>
@@ -211,7 +269,7 @@ export default function AvantiUnAltro() {
         <div className={styles.gameHeader}>
           <button className={styles.back} onClick={() => { if (confirm('Tornare alla home?')) navigate('/') }}>← Home</button>
           <div className={styles.playerTag}>👤 {currentPlayer}</div>
-          <div className={styles.qCount}>{questionIndex} / {config.questionsCount}</div>
+          <div className={styles.qCount}>{state.questionIndex} / {config.questionsCount}</div>
         </div>
 
         <div className={styles.progressBar}>
@@ -220,10 +278,11 @@ export default function AvantiUnAltro() {
 
         <div className={styles.timerCenter}>
           <Timer
-            key={timerKey}
+            key={state.timerKey}
             duration={config.timerDuration}
-            running={timerRunning}
+            running={state.timerRunning}
             onTimeUp={handleTimeUp}
+            onTick={onTick}
             warningAt={20}
             size="lg"
           />
@@ -231,16 +290,16 @@ export default function AvantiUnAltro() {
 
         <div className={[
           styles.questionBox,
-          feedback === 'correct' ? styles.qError : '',
-          feedback === 'wrong' ? styles.qCorrect : '',
-          resetAnim ? styles.qReset : '',
+          state.feedback === 'correct' ? styles.qError : '',
+          state.feedback === 'wrong' ? styles.qCorrect : '',
+          state.resetAnim ? styles.qReset : '',
         ].filter(Boolean).join(' ')}>
-          {feedback === 'correct' && (
+          {state.feedback === 'correct' && (
             <div className={styles.feedbackOverlay}>
-              <span className={styles.feedbackIcon}>😱 RISPOSTA GIUSTA! Riparti!</span>
+              <span className={styles.feedbackIcon}>🚨 RISPOSTA GIUSTA! Riparti!</span>
             </div>
           )}
-          {feedback === 'wrong' && (
+          {state.feedback === 'wrong' && (
             <div className={styles.feedbackOverlay}>
               <span className={styles.feedbackIcon}>✅ Bene! Risposta sbagliata!</span>
             </div>
@@ -250,25 +309,25 @@ export default function AvantiUnAltro() {
 
         <div className={styles.choiceRow}>
           <button
-            className={[styles.choiceBtn, styles.choiceA, feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
+            className={[styles.choiceBtn, styles.choiceA, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
             onClick={() => handleAnswer('A')}
-            disabled={!!feedback || !timerRunning}
+            disabled={!!state.feedback || !state.timerRunning}
           >
             <span className={styles.choiceLabel}>A</span>
             <span className={styles.choiceText}>{currentQ?.optionA}</span>
           </button>
           <button
-            className={[styles.choiceBtn, styles.choiceB, feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
+            className={[styles.choiceBtn, styles.choiceB, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
             onClick={() => handleAnswer('B')}
-            disabled={!!feedback || !timerRunning}
+            disabled={!!state.feedback || !state.timerRunning}
           >
             <span className={styles.choiceLabel}>B</span>
             <span className={styles.choiceText}>{currentQ?.optionB}</span>
           </button>
         </div>
 
-        {!timerRunning && questionIndex === 0 && (
-          <Button variant="warning" size="xl" fullWidth glow onClick={startTimer}>
+        {!state.timerRunning && state.questionIndex === 0 && (
+          <Button variant="warning" size="xl" fullWidth glow onClick={() => dispatch({ type: 'START_TIMER', now: Date.now() })}>
             ▶ Inizia!
           </Button>
         )}

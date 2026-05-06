@@ -832,13 +832,6 @@ function shuffleArray<T>(items: T[]): T[] {
   return copy
 }
 
-function reverseCard(card: ChiSonoCard): ChiSonoCard {
-  return {
-    ...card,
-    clues: [...card.clues].reverse() as ChiSonoCard['clues'],
-  }
-}
-
 export function getShuffledCards(count = CARDS.length): ChiSonoCard[] {
-  return shuffleArray(CARDS).slice(0, count).map(reverseCard)
+  return shuffleArray(CARDS).slice(0, count)
 }
