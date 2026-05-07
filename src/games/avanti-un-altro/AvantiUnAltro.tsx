@@ -7,6 +7,11 @@ import Button from '../../components/Button'
 import Timer from '../../components/Timer'
 import styles from './AvantiUnAltro.module.css'
 import PlayerSetup from '../../components/PlayerSetup'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'avanti-un-altro')!
 import { useSafeTimeout } from '../../hooks/useSafeTimeout'
 import { isWrongAnswer, rankResults } from './logic'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
@@ -174,11 +179,7 @@ export default function AvantiUnAltro() {
   /* ===== SETUP ===== */
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>🎯 Avanti un Altro</h1>
-          <p className={styles.gameSub}>Finale al Contrario</p>
+      <GameSetupLayout game={GAME_INFO}>
           <div className={styles.ruleBox}>
             <p>⚠️ <strong>Regola:</strong> Devi dare la risposta <strong style={{ color: 'var(--red)' }}>SBAGLIATA</strong> a ogni domanda. Se dài quella giusta, si riparte dall'inizio!</p>
           </div>
@@ -218,8 +219,7 @@ export default function AvantiUnAltro() {
           <Button variant="warning" size="xl" fullWidth glow onClick={startGame}>
             🏁 Inizia la Sfida!
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -264,78 +264,95 @@ export default function AvantiUnAltro() {
 
   /* ===== PLAYING ===== */
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home?')) navigate('/') }}
+      currentLabel={currentPlayer}
+      progress={progress}
+    >
       <div className={styles.gameCard}>
-        <div className={styles.gameHeader}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home?')) navigate('/') }}>← Home</button>
-          <div className={styles.playerTag}>👤 {currentPlayer}</div>
-          <div className={styles.qCount}>{state.questionIndex} / {config.questionsCount}</div>
-        </div>
-
         <div className={styles.progressBar}>
           <div className={styles.progressFill} style={{ width: `${progress}%` }} />
         </div>
 
-        <div className={styles.timerCenter}>
-          <Timer
-            key={state.timerKey}
-            duration={config.timerDuration}
-            running={state.timerRunning}
-            onTimeUp={handleTimeUp}
-            onTick={onTick}
-            warningAt={20}
-            size="lg"
-          />
-        </div>
-
-        <div className={[
-          styles.questionBox,
-          state.feedback === 'correct' ? styles.qError : '',
-          state.feedback === 'wrong' ? styles.qCorrect : '',
-          state.resetAnim ? styles.qReset : '',
-        ].filter(Boolean).join(' ')}>
-          {state.feedback === 'correct' && (
-            <div className={styles.feedbackOverlay}>
-              <span className={styles.feedbackIcon}>🚨 RISPOSTA GIUSTA! Riparti!</span>
+        {!state.timerRunning ? (
+          /* ── Ready screen: nasconde domanda ── */
+          <div className={styles.readyBox}>
+            <p className={styles.readyLabel}>Giocatore</p>
+            <h2 className={styles.readyPlayer}>{currentPlayer}</h2>
+            <p className={styles.readyHint}>
+              Rispondi SEMPRE con la risposta sbagliata.<br />
+              La domanda apparirà allo start.
+            </p>
+            <Timer key={state.timerKey} duration={config.timerDuration} running={false} onTimeUp={handleTimeUp} onTick={onTick} warningAt={20} size="lg" />
+            <Button variant="warning" size="xl" fullWidth glow onClick={() => dispatch({ type: 'START_TIMER', now: Date.now() })}>
+              ▶ Avvia {currentPlayer}
+            </Button>
+          </div>
+        ) : (
+          /* ── In gioco: domanda + scelte ── */
+          <>
+            <div className={styles.gameHeader}>
+              <div className={styles.playerTag}>👤 {currentPlayer}</div>
+              <div className={styles.qCount}>{state.questionIndex} / {config.questionsCount}</div>
             </div>
-          )}
-          {state.feedback === 'wrong' && (
-            <div className={styles.feedbackOverlay}>
-              <span className={styles.feedbackIcon}>✅ Bene! Risposta sbagliata!</span>
+
+            <div className={styles.timerCenter}>
+              <Timer
+                key={state.timerKey}
+                duration={config.timerDuration}
+                running={state.timerRunning}
+                onTimeUp={handleTimeUp}
+                onTick={onTick}
+                warningAt={20}
+                size="lg"
+              />
             </div>
-          )}
-          <p className={styles.questionText}>{currentQ?.question}</p>
-        </div>
 
-        <div className={styles.choiceRow}>
-          <button
-            className={[styles.choiceBtn, styles.choiceA, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
-            onClick={() => handleAnswer('A')}
-            disabled={!!state.feedback || !state.timerRunning}
-          >
-            <span className={styles.choiceLabel}>A</span>
-            <span className={styles.choiceText}>{currentQ?.optionA}</span>
-          </button>
-          <button
-            className={[styles.choiceBtn, styles.choiceB, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
-            onClick={() => handleAnswer('B')}
-            disabled={!!state.feedback || !state.timerRunning}
-          >
-            <span className={styles.choiceLabel}>B</span>
-            <span className={styles.choiceText}>{currentQ?.optionB}</span>
-          </button>
-        </div>
+            <div className={[
+              styles.questionBox,
+              state.feedback === 'correct' ? styles.qError : '',
+              state.feedback === 'wrong' ? styles.qCorrect : '',
+              state.resetAnim ? styles.qReset : '',
+            ].filter(Boolean).join(' ')}>
+              {state.feedback === 'correct' && (
+                <div className={styles.feedbackOverlay}>
+                  <span className={styles.feedbackIcon}>🚨 RISPOSTA GIUSTA! Riparti!</span>
+                </div>
+              )}
+              {state.feedback === 'wrong' && (
+                <div className={styles.feedbackOverlay}>
+                  <span className={styles.feedbackIcon}>✅ Bene! Risposta sbagliata!</span>
+                </div>
+              )}
+              <p className={styles.questionText}>{currentQ?.question}</p>
+            </div>
 
-        {!state.timerRunning && state.questionIndex === 0 && (
-          <Button variant="warning" size="xl" fullWidth glow onClick={() => dispatch({ type: 'START_TIMER', now: Date.now() })}>
-            ▶ Inizia!
-          </Button>
+            <div className={styles.choiceRow}>
+              <button
+                className={[styles.choiceBtn, styles.choiceA, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
+                onClick={() => handleAnswer('A')}
+                disabled={!!state.feedback}
+              >
+                <span className={styles.choiceLabel}>A</span>
+                <span className={styles.choiceText}>{currentQ?.optionA}</span>
+              </button>
+              <button
+                className={[styles.choiceBtn, styles.choiceB, state.feedback ? styles.choiceDisabled : ''].filter(Boolean).join(' ')}
+                onClick={() => handleAnswer('B')}
+                disabled={!!state.feedback}
+              >
+                <span className={styles.choiceLabel}>B</span>
+                <span className={styles.choiceText}>{currentQ?.optionB}</span>
+              </button>
+            </div>
+
+            <div className={styles.reminder}>
+              ⚠️ Rispondi con la risposta <strong style={{ color: 'var(--red)' }}>SBAGLIATA</strong>!
+            </div>
+          </>
         )}
-
-        <div className={styles.reminder}>
-          ⚠️ Rispondi con la risposta <strong style={{ color: 'var(--red)' }}>SBAGLIATA</strong>!
-        </div>
       </div>
-    </div>
+    </GamePlayLayout>
   )
 }

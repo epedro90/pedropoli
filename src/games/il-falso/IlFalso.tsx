@@ -9,6 +9,11 @@ import { getShuffledCards } from './data'
 import { FalseCard, GamePhase, IlFalsoConfig, IlFalsoPlayer } from './types'
 import styles from './IlFalso.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'il-falso')!
 
 const DEFAULT_CONFIG: IlFalsoConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -179,12 +184,7 @@ export default function IlFalso() {
 
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>Il Falso</h1>
-          <p className={styles.gameSub}>Trova l'affermazione inventata</p>
-
+      <GameSetupLayout game={GAME_INFO}>
           <div className={styles.ruleBox}>
             <p>
               <strong>Regola:</strong> tra quattro affermazioni una sola è falsa.
@@ -248,8 +248,7 @@ export default function IlFalso() {
           <Button variant="primary" size="xl" fullWidth glow onClick={startGame}>
             ▶ Inizia il gioco
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -286,12 +285,13 @@ export default function IlFalso() {
   }
 
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}
+      currentLabel={activePlayer?.name}
+    >
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
-            ← Home
-          </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--violet)" title="Classifica" />
           <div className={styles.turnInfo}>
             <span className={styles.turnLabel}>Turno</span>
@@ -388,7 +388,7 @@ export default function IlFalso() {
           )}
         </div>
       </div>
-    </div>
+    </GamePlayLayout>
   )
 }
 

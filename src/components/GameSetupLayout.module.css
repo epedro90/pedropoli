@@ -1,0 +1,211 @@
+.page {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Colored orb that picks up the game's accent color */
+.orb {
+  position: fixed;
+  top: -30%;
+  left: -10%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 700px;
+  max-height: 700px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--game-accent) 18%, transparent), transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(5%, 8%) scale(1.08); }
+}
+
+.back {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  font-weight: 600;
+  padding: 1.5rem 2rem;
+  transition: var(--transition);
+  letter-spacing: 0.04em;
+}
+
+.back:hover {
+  color: var(--white);
+}
+
+/* Two-column layout */
+.layout {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: calc(100vh - 60px);
+}
+
+/* ─── Hero panel ─────────────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem 3rem 3rem 4rem;
+  gap: 1.25rem;
+}
+
+.heroEmoji {
+  font-size: 6rem;
+  line-height: 1;
+  animation: float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px color-mix(in srgb, var(--game-accent) 40%, transparent));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.heroSubtitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+}
+
+.heroDescription {
+  font-size: 1rem;
+  color: var(--gray);
+  line-height: 1.7;
+  max-width: 380px;
+}
+
+.heroBadges {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.4em 1em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+/* ─── Setup panel ────────────────────────────────────── */
+.setupPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 4rem 3rem 3rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+}
+
+.setupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.setupDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.setupLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray);
+}
+
+.setupContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .hero {
+    padding: 2rem 2rem 1.5rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .heroEmoji {
+    font-size: 4rem;
+  }
+
+  .heroDescription {
+    max-width: 100%;
+  }
+
+  .heroBadges {
+    justify-content: center;
+  }
+
+  .setupPanel {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 2rem;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .back {
+    padding: 1rem 1.5rem;
+  }
+
+  .hero {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+
+  .setupPanel {
+    padding: 1.5rem;
+  }
+}

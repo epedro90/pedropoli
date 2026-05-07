@@ -11,6 +11,11 @@ import { useSafeTimeout } from '../../hooks/useSafeTimeout'
 import { applyTeamScoreDelta, getNextTeamIndex, isLastTurn } from './logic'
 import styles from './IntesaVincente.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'intesa-vincente')!
 
 const DEFAULT_CONFIG: IntesaConfig = {
   teams: [
@@ -205,11 +210,7 @@ export default function IntesaVincente() {
   /* ===== SETUP ===== */
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>🧠 Intesa Vincente</h1>
-          <p className={styles.gameSub}>Configura la partita</p>
+      <GameSetupLayout game={GAME_INFO}>
 
           <div className={styles.section}>
             <label className={styles.label}>⏱ Durata turno (secondi)</label>
@@ -276,8 +277,7 @@ export default function IntesaVincente() {
           <Button variant="success" size="xl" fullWidth glow onClick={startGame}>
             🎮 Inizia la Partita!
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -313,10 +313,13 @@ export default function IntesaVincente() {
 
   /* ===== PLAYING ===== */
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home? La partita sarà persa.')) navigate('/') }}
+      currentLabel={currentTeam?.name}
+    >
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita sarà persa.')) navigate('/') }}>← Home</button>
           <ScoreBoard players={scorePlayers} accentColor="var(--blue-electric)" title="Classifica" />
           <div className={styles.turnInfo}>
             <span className={styles.turnLabel}>Turno</span>
@@ -330,48 +333,63 @@ export default function IntesaVincente() {
             <span>{currentTeam?.name}</span>
           </div>
 
-          <div className={styles.timerRow}>
-            <Timer
-              duration={config.timerDuration}
-              running={state.turn.timerRunning}
-              onTimeUp={handleTimeUp}
-            onTick={onTick}
-              warningAt={10}
-              size="lg"
-            />
-          </div>
-
-          <div className={[
-            styles.wordBox,
-            state.wordAnim === 'correct' ? styles.wordCorrect : '',
-            state.wordAnim === 'error' ? styles.wordError : '',
-            state.wordAnim === 'skip' ? styles.wordSkip : '',
-          ].filter(Boolean).join(' ')}>
-            <p className={styles.wordLabel}>Parola da indovinare</p>
-            <h2 className={styles.word}>{currentWord}</h2>
-          </div>
-
-          <div className={styles.statsRow}>
-            <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--green)' }}>{state.turn.correctThisTurn}</span>
-              <span className={styles.statLabel}>Corrette</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--red)' }}>{state.turn.penaltyThisTurn}</span>
-              <span className={styles.statLabel}>Penalità</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statVal} style={{ color: 'var(--yellow)' }}>{state.turn.skipsLeft}</span>
-              <span className={styles.statLabel}>Passi</span>
-            </div>
-          </div>
-
           {!state.turn.timerRunning ? (
-            <Button variant="primary" size="xl" fullWidth glow onClick={() => dispatch({ type: 'TOGGLE_TIMER' })}>
-              ▶ Avvia Timer
-            </Button>
+            /* ── Pre-start: nascondi la parola ── */
+            <div className={styles.readyBox}>
+              <p className={styles.readyLabel}>Squadra di turno</p>
+              <h2 className={styles.readyTeam}>{currentTeam?.name}</h2>
+              <p className={styles.readyHint}>Premi Avvia quando tutti sono pronti. La parola apparirà allo start.</p>
+              <Timer
+                duration={config.timerDuration}
+                running={false}
+                onTimeUp={handleTimeUp}
+                onTick={onTick}
+                warningAt={10}
+                size="lg"
+              />
+              <Button variant="primary" size="xl" fullWidth glow onClick={() => dispatch({ type: 'TOGGLE_TIMER' })}>
+                ▶ Avvia Timer
+              </Button>
+            </div>
           ) : (
+            /* ── In gioco: parola + azioni ── */
             <>
+              <div className={[
+                styles.wordBox,
+                state.wordAnim === 'correct' ? styles.wordCorrect : '',
+                state.wordAnim === 'error' ? styles.wordError : '',
+                state.wordAnim === 'skip' ? styles.wordSkip : '',
+              ].filter(Boolean).join(' ')}>
+                <p className={styles.wordLabel}>Parola da indovinare</p>
+                <h2 className={styles.word}>{currentWord}</h2>
+              </div>
+
+              <div className={styles.statsRow}>
+                <div className={styles.stat}>
+                  <span className={styles.statVal} style={{ color: 'var(--green)' }}>{state.turn.correctThisTurn}</span>
+                  <span className={styles.statLabel}>Corrette</span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statVal} style={{ color: 'var(--red)' }}>{state.turn.penaltyThisTurn}</span>
+                  <span className={styles.statLabel}>Penalità</span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statVal} style={{ color: 'var(--yellow)' }}>{state.turn.skipsLeft}</span>
+                  <span className={styles.statLabel}>Passi</span>
+                </div>
+              </div>
+
+              <div className={styles.timerRow}>
+                <Timer
+                  duration={config.timerDuration}
+                  running={state.turn.timerRunning}
+                  onTimeUp={handleTimeUp}
+                  onTick={onTick}
+                  warningAt={10}
+                  size="lg"
+                />
+              </div>
+
               <div className={styles.actionGrid}>
                 <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
                 <Button variant="danger" size="xl" onClick={handleError}>❌ Penalità −1</Button>
@@ -397,6 +415,6 @@ export default function IntesaVincente() {
           </div>
         )}
       </Modal>
-    </div>
+    </GamePlayLayout>
   )
 }

@@ -9,6 +9,11 @@ import { getShuffledCards } from './data'
 import { GamePhase, TabooCard, TabooConfig, TabooPlayer } from './types'
 import styles from './TabooSprint.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'taboo-sprint')!
 
 const DEFAULT_CONFIG: TabooConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -30,6 +35,7 @@ export default function TabooSprint() {
   const [skipsLeft, setSkipsLeft] = useState(DEFAULT_CONFIG.maxSkips)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null)
   const [timerRunning, setTimerRunning] = useState(false)
+  const [awaitingStart, setAwaitingStart] = useState(true)
   const [turnKey, setTurnKey] = useState(0)
   const [totalTurns, setTotalTurns] = useState(0)
   const feedbackTimer = useSafeTimeout()
@@ -41,11 +47,11 @@ export default function TabooSprint() {
     feedbackTimer.clear()
     setFeedback(null)
     setSkipsLeft(config.maxSkips)
+    setTimerRunning(false)
 
     setTurnIndex(prev => {
       const nextTurn = prev + 1
       if (nextTurn >= totalTurns || cardIndex + 1 >= cards.length) {
-        setTimerRunning(false)
         setPhase('results')
         return prev
       }
@@ -53,6 +59,7 @@ export default function TabooSprint() {
       setCardIndex(prevCard => prevCard + 1)
       setCurrentPlayerIdx(prevPlayer => (prevPlayer + 1) % players.length)
       setTurnKey(prevKey => prevKey + 1)
+      setAwaitingStart(true)
       return nextTurn
     })
   }, [cardIndex, cards.length, config.maxSkips, feedbackTimer, players.length, totalTurns])
@@ -171,12 +178,7 @@ export default function TabooSprint() {
 
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>Taboo Sprint</h1>
-          <p className={styles.gameSub}>Spiega senza dire le parole vietate</p>
-
+      <GameSetupLayout game={GAME_INFO}>
           <div className={styles.ruleBox}>
             <p>
               <strong>Regola:</strong> fai indovinare la parola senza usare nessuna delle parole taboo.
@@ -255,8 +257,7 @@ export default function TabooSprint() {
           <Button variant="warning" size="xl" fullWidth glow onClick={startGame}>
             ▶ Inizia lo Sprint
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -293,12 +294,13 @@ export default function TabooSprint() {
   }
 
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}
+      currentLabel={activePlayer?.name}
+    >
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
-            ← Home
-          </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--red)" title="Classifica" />
           <div className={styles.turnInfo}>
             <span className={styles.turnLabel}>Turno</span>
@@ -315,85 +317,96 @@ export default function TabooSprint() {
         </aside>
 
         <div className={styles.gameMain}>
-          <div className={styles.playerBanner}>
-            <span className={styles.playerBannerIcon}>⏱</span>
-            <div>
-              <div className={styles.playerBannerName}>{activePlayer?.name}</div>
-              <div className={styles.playerBannerLabel}>Mimo o squadra attiva</div>
+          {awaitingStart ? (
+            /* ── Ready screen ── */
+            <div className={styles.readyBox}>
+              <p className={styles.readyLabel}>Turno {turnIndex + 1} / {totalTurns || 1}</p>
+              <h2 className={styles.readyPlayer}>{activePlayer?.name}</h2>
+              <p className={styles.readyHint}>
+                Fai indovinare la parola senza usare le parole vietate.<br />
+                La parola apparirà allo start.
+              </p>
+              <Button variant="primary" size="xl" glow onClick={() => { setAwaitingStart(false); setTimerRunning(true) }}>
+                ▶ Avvia {activePlayer?.name}
+              </Button>
             </div>
-            <div className={styles.personalTimer}>
-              <Timer
-                key={turnKey}
-                duration={config.turnTime}
-                running={timerRunning}
-                onTimeUp={finishTurn}
-            onTick={onTick}
-                warningAt={10}
-                size="sm"
-                showProgress={false}
-              />
-            </div>
-          </div>
-
-          <div className={styles.cardHeader}>
-            <span className={styles.categoryPill}>{currentCard?.category}</span>
-            <span className={styles.scoreHint}>Punto carta: +{currentPoints}</span>
-          </div>
-
-          <div className={[
-            styles.wordBox,
-            feedback?.type === 'success' ? styles.qCorrect : '',
-            feedback?.type === 'error' ? styles.qError : '',
-            feedback?.type === 'info' ? styles.qSkip : '',
-          ].filter(Boolean).join(' ')}>
-            <p className={styles.wordLabel}>Parola da far indovinare</p>
-            <h2 className={styles.word}>{currentCard?.answer}</h2>
-            <div className={styles.tabooBlock}>
-              <span className={styles.tabooTitle}>Parole vietate</span>
-              <div className={styles.tabooList}>
-                {currentCard?.taboos.map((word, idx) => (
-                  <span key={idx} className={styles.tabooChip}>{word}</span>
-                ))}
+          ) : (
+            /* ── In gioco ── */
+            <>
+              <div className={styles.playerBanner}>
+                <span className={styles.playerBannerIcon}>⏱</span>
+                <div>
+                  <div className={styles.playerBannerName}>{activePlayer?.name}</div>
+                  <div className={styles.playerBannerLabel}>Mimo o squadra attiva</div>
+                </div>
+                <div className={styles.personalTimer}>
+                  <Timer
+                    key={turnKey}
+                    duration={config.turnTime}
+                    running={timerRunning}
+                    onTimeUp={finishTurn}
+                    onTick={onTick}
+                    warningAt={10}
+                    size="sm"
+                    showProgress={false}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
 
-          {feedback && (
-            <div className={[
-              styles.feedback,
-              feedback.type === 'success' ? styles.success : '',
-              feedback.type === 'error' ? styles.error : '',
-              feedback.type === 'info' ? styles.info : '',
-            ].filter(Boolean).join(' ')}>
-              <strong>{feedback.title}</strong>
-              <span>{feedback.message}</span>
-            </div>
+              <div className={styles.cardHeader}>
+                <span className={styles.categoryPill}>{currentCard?.category}</span>
+                <span className={styles.scoreHint}>Punto carta: +{currentPoints}</span>
+              </div>
+
+              <div className={[
+                styles.wordBox,
+                feedback?.type === 'success' ? styles.qCorrect : '',
+                feedback?.type === 'error' ? styles.qError : '',
+                feedback?.type === 'info' ? styles.qSkip : '',
+              ].filter(Boolean).join(' ')}>
+                <p className={styles.wordLabel}>Parola da far indovinare</p>
+                <h2 className={styles.word}>{currentCard?.answer}</h2>
+                <div className={styles.tabooBlock}>
+                  <span className={styles.tabooTitle}>Parole vietate</span>
+                  <div className={styles.tabooList}>
+                    {currentCard?.taboos.map((word, idx) => (
+                      <span key={idx} className={styles.tabooChip}>{word}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {feedback && (
+                <div className={[
+                  styles.feedback,
+                  feedback.type === 'success' ? styles.success : '',
+                  feedback.type === 'error' ? styles.error : '',
+                  feedback.type === 'info' ? styles.info : '',
+                ].filter(Boolean).join(' ')}>
+                  <strong>{feedback.title}</strong>
+                  <span>{feedback.message}</span>
+                </div>
+              )}
+
+              <div className={styles.guessActions}>
+                <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning || !!feedback}>
+                  ✅ Indovinata <span className={styles.keyHint}>[1]</span>
+                </Button>
+                <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning || !!feedback}>
+                  ❌ Taboo <span className={styles.keyHint}>[2]</span>
+                </Button>
+                <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0 || !!feedback}>
+                  ⏭ Skip ({skipsLeft}) <span className={styles.keyHint}>[3]</span>
+                </Button>
+                <Button variant="ghost" size="lg" type="button" onClick={() => setTimerRunning(r => !r)}>
+                  {timerRunning ? '⏸ Pausa' : '▶ Riprendi'}
+                </Button>
+              </div>
+            </>
           )}
-
-          <div className={styles.guessActions}>
-            <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning || !!feedback}>
-              ✅ Indovinata <span className={styles.keyHint}>[1]</span>
-            </Button>
-            <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning || !!feedback}>
-              ❌ Taboo <span className={styles.keyHint}>[2]</span>
-            </Button>
-            <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0 || !!feedback}>
-              ⏭ Skip ({skipsLeft}) <span className={styles.keyHint}>[3]</span>
-            </Button>
-            <Button variant="ghost" size="lg" type="button" onClick={() => setTimerRunning(r => !r)}>
-              {timerRunning ? '⏸ Pausa' : '▶ Riprendi'}
-            </Button>
-          </div>
-
-          <div className={styles.ruleBox}>
-            <p>
-              <strong>Regola rapida:</strong> ogni parola giusta vale +1, l'errore non toglie punti.
-              Gli skip sono limitati per turno e il timer scorre senza fermarsi.
-            </p>
-          </div>
         </div>
       </div>
-    </div>
+    </GamePlayLayout>
   )
 }
 

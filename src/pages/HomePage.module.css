@@ -1,129 +1,150 @@
 .page {
   min-height: 100vh;
-  padding: 0 0 4rem;
-}
-
-/* Hero */
-.hero {
   position: relative;
-  text-align: center;
-  padding: 4rem 2rem 3rem;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-.heroGlow {
-  position: absolute;
-  top: -60px;
-  left: 50%;
-  transform: translateX(-50%);
+/* ═══════════════════════════════════════════════════
+   BACKGROUND DECORATIVE ELEMENTS
+═══════════════════════════════════════════════════ */
+.bgOrb1 {
+  position: fixed;
+  top: -200px;
+  right: -100px;
   width: 600px;
-  height: 400px;
-  background: radial-gradient(ellipse at center,
-    rgba(0, 170, 255, 0.18) 0%,
-    rgba(124, 58, 237, 0.12) 40%,
-    transparent 70%
-  );
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.08), transparent 70%);
+  border-radius: 50%;
   pointer-events: none;
+  z-index: 0;
+  animation: float 20s ease-in-out infinite;
 }
 
-.logoWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.2rem;
-  margin-bottom: 1.5rem;
+.bgOrb2 {
+  position: fixed;
+  bottom: -150px;
+  left: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.06), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: float 25s ease-in-out infinite reverse;
+}
+
+.bgGrid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(0deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
+.header {
+  position: relative;
+  z-index: 2;
+  padding: 4rem 2rem 3rem;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.95) 0%, rgba(5, 5, 5, 0.6) 100%);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
   animation: slide-in-down 0.6s ease-out;
 }
 
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  animation: float 4s ease-in-out infinite;
+  display: inline-block;
+}
+
 .logoIcon {
-  font-size: 5rem;
-  line-height: 1;
-  animation: float 3s ease-in-out infinite;
-  filter: var(--logo-glow);
+  display: inline-block;
+  filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
 }
 
-.title {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 8vw, 5.5rem);
+.mainTitle {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
 }
 
-.titlePedro {
-  color: var(--cyan);
-  text-shadow: var(--text-glow-cyan);
+.titleWord {
+  display: inline-block;
 }
 
+.titlePedro,
 .titlePoli {
-  color: var(--pink);
-  text-shadow: var(--text-glow-pink);
+  color: #ffffff;
+  text-shadow: none;
 }
 
-.tagline {
-  font-size: clamp(0.75rem, 2vw, 0.95rem);
-  color: var(--gray);
+.headerTagline {
+  font-size: 1rem;
+  color: #b0b0b0;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-top: 0.3rem;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
 }
 
-.decorRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.5rem, 2vw, 1.2rem);
-  margin: 1.5rem 0;
-  animation: fade-in 0.8s ease-out 0.3s both;
-}
-
-.decorEmoji {
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  animation: float 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
-}
-
-.subtitle {
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  color: var(--gray);
-  line-height: 1.7;
-  max-width: 580px;
+.headerSubtitle {
+  font-size: 1rem;
+  color: #808080;
+  line-height: 1.6;
+  max-width: 700px;
   margin: 0 auto;
-  animation: fade-in 0.8s ease-out 0.5s both;
 }
 
-.subtitleHighlight {
-  color: var(--yellow);
-  font-weight: 700;
-}
-
-/* Games section */
-.gamesSection {
-  max-width: 1100px;
+/* ═══════════════════════════════════════════════════
+   ALL GAMES SECTION
+═══════════════════════════════════════════════════ */
+.allGamesSection {
+  position: relative;
+  z-index: 2;
+  padding: 4rem 2rem;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  animation: fade-in 0.8s ease-out 0.2s both;
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
 .sectionTitle {
-  font-family: var(--font-display);
-  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--white);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.sectionDecor {
-  color: var(--violet-light);
-  font-size: 1.5rem;
+.headerLine {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), transparent);
+  border-radius: 1px;
 }
 
 .grid {
@@ -132,27 +153,97 @@
   gap: 1.5rem;
 }
 
-/* Footer */
+/* ═══════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════ */
 .footer {
+  position: relative;
+  z-index: 2;
+  padding: 3rem 2rem;
+  margin-top: 4rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.6) 0%, rgba(5, 5, 5, 0.95) 100%);
   text-align: center;
-  padding: 2rem 1rem 0;
-  margin-top: 3rem;
+  animation: fade-in 0.8s ease-out 0.3s both;
 }
 
-.footerDivider {
-  width: 200px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--blue-electric), transparent);
-  margin: 0 auto 1.5rem;
+.footerContent {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .footerText {
-  color: var(--gray);
-  font-size: 0.9rem;
+  color: #b0b0b0;
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem 0;
 }
 
 .footerSub {
-  color: rgba(148, 163, 184, 0.5);
-  font-size: 0.8rem;
-  margin-top: 0.3rem;
+  color: rgba(176, 176, 176, 0.6);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes slide-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .header {
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerLine {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 2rem 1rem 1.5rem;
+  }
+
+  .mainTitle {
+    font-size: 2rem;
+  }
+
+  .headerSubtitle {
+    font-size: 0.9rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }

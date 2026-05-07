@@ -7,9 +7,9 @@
 }
 
 .setupCard {
-  background: rgba(16, 42, 92, 0.72);
+  background: rgba(26, 26, 26, 0.85);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(168, 85, 247, 0.28);
+  border: 1px solid rgba(0, 212, 255, 0.12);
   border-radius: var(--radius);
   padding: 2rem;
   width: 100%;
@@ -17,7 +17,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.08);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
   animation: slide-in-up 0.4s ease-out;
 }
 
@@ -32,20 +32,19 @@
   padding: 0.2em 0;
   transition: var(--transition);
 }
-.back:hover { color: var(--violet); }
+.back:hover { color: var(--cyan); }
 
 .gameTitle {
   font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 900;
-  color: var(--violet-light);
-  text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  color: var(--white);
   text-align: center;
 }
 
 .gameSub {
   text-align: center;
-  color: var(--yellow);
+  color: var(--cyan);
   font-weight: 700;
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -54,8 +53,8 @@
 }
 
 .ruleBox {
-  background: rgba(6, 20, 46, 0.6);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(0, 212, 255, 0.1);
   border-radius: var(--radius-sm);
   padding: 0.9rem 1rem;
   color: var(--gray);
@@ -83,8 +82,8 @@
 }
 
 .chip {
-  background: rgba(6, 20, 46, 0.8);
-  border: 1.5px solid rgba(168, 85, 247, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: var(--radius-sm);
   color: var(--gray);
   font-family: var(--font-main);
@@ -94,77 +93,77 @@
   cursor: pointer;
   transition: var(--transition);
 }
-.chip:hover { border-color: var(--violet); color: var(--violet); }
+.chip:hover { border-color: rgba(0, 212, 255, 0.5); color: var(--white); }
 .chipActive {
-  background: rgba(168, 85, 247, 0.12);
-  border-color: var(--violet);
-  color: var(--violet-light);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.18);
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
 }
 
 .gameLayout {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 1.5rem;
-  width: 100%;
-  max-width: 980px;
-  align-items: start;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 48px);
 }
 
+@media (max-width: 900px) { .gameLayout { grid-template-columns: 200px 1fr; } }
 @media (max-width: 700px) {
   .gameLayout { grid-template-columns: 1fr; }
-  .sidebar { order: 2; }
+  .sidebar { order: 2; border-top: 1px solid rgba(255,255,255,0.06); border-right: none; }
   .gameMain { order: 1; }
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  position: sticky;
-  top: 1.5rem;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .turnInfo {
-  background: rgba(16, 42, 92, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.15);
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.12);
   border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.turnLabel { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; }
-.turnVal { font-family: var(--font-display); font-weight: 700; color: var(--white); }
+.turnLabel { font-size: 1rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.06em; }
+.turnVal { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--white); }
 
 .gameMain {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.25rem;
+  padding: 2rem 3rem;
+  justify-content: center;
 }
 
 .playerBanner {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(255, 209, 102, 0.12));
-  border: 1px solid rgba(168, 85, 247, 0.28);
+  background: rgba(0, 120, 212, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: var(--radius-sm);
-  padding: 0.9rem 1.2rem;
+  padding: 1rem 1.5rem;
 }
 
-.playerBannerIcon { font-size: 2rem; }
+.playerBannerIcon { font-size: 2.2rem; }
 
 .playerBannerName {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   font-weight: 900;
-  color: var(--violet-light);
+  color: var(--cyan);
 }
 
 .playerBannerLabel {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--gray);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -190,9 +189,9 @@
   align-items: center;
   border-radius: 999px;
   padding: 0.35rem 0.7rem;
-  background: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  color: var(--violet-light);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  color: var(--cyan);
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -207,8 +206,8 @@
 }
 
 .questionCard {
-  background: rgba(6, 20, 46, 0.82);
-  border: 2px solid rgba(168, 85, 247, 0.25);
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.15);
   border-radius: var(--radius);
   padding: 1.5rem;
   text-align: center;
@@ -217,12 +216,12 @@
 
 .correct {
   border-color: var(--green);
-  box-shadow: 0 0 30px rgba(6, 214, 160, 0.35);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
 .error {
   border-color: var(--red);
-  box-shadow: 0 0 30px rgba(239, 71, 111, 0.35);
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
 }
 
 .questionLabel {
@@ -235,27 +234,27 @@
 
 .questionText {
   font-family: var(--font-display);
-  font-size: clamp(1.15rem, 3.5vw, 1.6rem);
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 800;
   color: var(--white);
   line-height: 1.35;
 }
 
 .statementList {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .statementBtn {
   display: flex;
   align-items: flex-start;
-  gap: 0.85rem;
-  padding: 0.95rem 1rem;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(16, 42, 92, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--white);
   cursor: pointer;
   transition: var(--transition);
@@ -264,8 +263,8 @@
 
 .statementBtn:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: rgba(168, 85, 247, 0.35);
-  box-shadow: 0 0 18px rgba(168, 85, 247, 0.18);
+  border-color: rgba(0, 212, 255, 0.3);
+  background: rgba(0, 120, 212, 0.08);
 }
 
 .statementBtn:disabled {
@@ -281,9 +280,9 @@
   min-width: 2rem;
   min-height: 2rem;
   border-radius: var(--radius-sm);
-  background: rgba(168, 85, 247, 0.18);
-  border: 1px solid rgba(168, 85, 247, 0.35);
-  color: var(--violet-light);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: var(--cyan);
   font-family: var(--font-display);
   font-weight: 900;
   padding: 0.2rem 0.4rem;
@@ -294,13 +293,13 @@
   font-size: 0.55rem;
   font-family: var(--font-main);
   font-weight: 600;
-  color: rgba(168, 85, 247, 0.7);
+  color: rgba(0, 212, 255, 0.6);
   letter-spacing: 0;
 }
 
 .statementText {
   flex: 1;
-  font-size: clamp(0.95rem, 2.8vw, 1.08rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   line-height: 1.4;
 }
 
@@ -319,15 +318,15 @@
 }
 .feedback span {
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.82);
+  color: rgba(255, 255, 255, 0.8);
 }
 .success {
-  background: rgba(6, 214, 160, 0.12);
-  border-color: rgba(6, 214, 160, 0.35);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 .errorBox {
-  background: rgba(239, 71, 111, 0.12);
-  border-color: rgba(239, 71, 111, 0.35);
+  background: rgba(255, 68, 68, 0.1);
+  border-color: rgba(255, 68, 68, 0.3);
 }
 
 .waitActions {
@@ -337,14 +336,14 @@
 }
 
 .resultsCard {
-  background: rgba(16, 42, 92, 0.86);
-  border: 2px solid var(--violet);
+  background: rgba(26, 26, 26, 0.9);
+  border: 1px solid rgba(0, 212, 255, 0.25);
   border-radius: var(--radius);
   padding: 2.5rem 2rem;
   max-width: 520px;
   width: 100%;
   text-align: center;
-  box-shadow: 0 0 40px rgba(168, 85, 247, 0.25);
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.08);
   animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
@@ -357,7 +356,7 @@
   font-family: var(--font-display);
   font-size: 2.5rem;
   font-weight: 900;
-  color: var(--violet-light);
+  color: var(--cyan);
 }
 .winnerName {
   font-family: var(--font-display);
@@ -377,13 +376,13 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.85rem;
-  background: rgba(6, 20, 46, 0.5);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-sm);
 }
-.first { border: 1px solid var(--violet); background: rgba(168, 85, 247, 0.08); }
+.first { border: 1px solid rgba(0, 212, 255, 0.3); background: rgba(0, 212, 255, 0.06); }
 .finalRank { font-size: 1.1rem; min-width: 30px; }
 .finalName { flex: 1; font-weight: 700; text-align: left; }
-.finalScore { font-family: var(--font-display); color: var(--violet-light); font-weight: 900; }
+.finalScore { font-family: var(--font-display); color: var(--cyan); font-weight: 900; }
 .finalMeta { font-size: 0.8rem; color: var(--gray); }
 
 .resultsBtns {

@@ -2,44 +2,36 @@ import { GAMES } from '../types/game'
 import GameCard from '../components/GameCard'
 import styles from './HomePage.module.css'
 
-const DECORATIONS = ['🎯', '🏆', '⭐', '🎮', '🎉', '🔥', '💫', '🎊']
-
 export default function HomePage() {
   return (
     <div className={styles.page}>
-      <header className={styles.hero}>
-        <div className={styles.heroGlow} />
-        <div className={styles.logoWrap}>
-          <div className={styles.logoIcon}>🎲</div>
-          <div>
-            <h1 className={styles.title}>
-              <span className={styles.titlePedro}>PEDRO</span>
-              <span className={styles.titlePoli}>POLI</span>
-            </h1>
-            <p className={styles.tagline}>Il party game show dei tuoi sogni</p>
+      {/* Background decorative elements */}
+      <div className={styles.bgOrb1} />
+      <div className={styles.bgOrb2} />
+      <div className={styles.bgGrid} />
+
+      {/* Main header */}
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <div className={styles.logo}>
+            <span className={styles.logoIcon}>🎲</span>
           </div>
+          <h1 className={styles.mainTitle}>
+            <span className={[styles.titleWord, styles.titlePedro].join(' ')}>PEDRO</span>
+            <span className={[styles.titleWord, styles.titlePoli].join(' ')}>POLI</span>
+          </h1>
+          <p className={styles.headerTagline}>Il party game show dei tuoi sogni</p>
+          <p className={styles.headerSubtitle}>
+            Sfida i tuoi amici con giochi esclusivi ispirati ai più grandi quiz show televisivi
+          </p>
         </div>
-
-        <div className={styles.decorRow}>
-          {DECORATIONS.map((emoji, index) => (
-            <span key={emoji} className={styles.decorEmoji} style={{ animationDelay: `${index * 0.3}s` }}>
-              {emoji}
-            </span>
-          ))}
-        </div>
-
-        <p className={styles.subtitle}>
-          Sfida i tuoi amici con giochi esclusivi ispirati ai più grandi quiz show televisivi!
-          <br />
-          <span className={styles.subtitleHighlight}>Scegli un gioco e che la festa abbia inizio! 🎉</span>
-        </p>
       </header>
 
-      <section className={styles.gamesSection}>
+      {/* All Games Grid */}
+      <section className={styles.allGamesSection}>
         <div className={styles.sectionHeader}>
-          <span className={styles.sectionDecor}>▸</span>
           <h2 className={styles.sectionTitle}>Giochi Disponibili</h2>
-          <span className={styles.sectionDecor}>◂</span>
+          <div className={styles.headerLine} />
         </div>
         <div className={styles.grid}>
           {GAMES.map((game, index) => (
@@ -48,12 +40,14 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Footer */}
       <footer className={styles.footer}>
-        <div className={styles.footerDivider} />
-        <p className={styles.footerText}>
-          🎲 <strong>Pedropoli</strong> - Il party game show dei tuoi sogni
-        </p>
-        <p className={styles.footerSub}>Realizzato con ❤️ per le serate tra amici</p>
+        <div className={styles.footerContent}>
+          <p className={styles.footerText}>
+            🎲 <strong>Pedropoli</strong> - Il party game show dei tuoi sogni
+          </p>
+          <p className={styles.footerSub}>Realizzato con ❤️ per le serate tra amici</p>
+        </div>
       </footer>
     </div>
   )

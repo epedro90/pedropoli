@@ -37,7 +37,6 @@ export default function GameCard({ game, index }: Props) {
           size="lg"
           fullWidth
           onClick={() => navigate(game.route)}
-          style={{ background: `linear-gradient(135deg, ${game.accentColor}, ${game.secondaryColor})`, color: '#06142e' } as React.CSSProperties}
         >
           🎮 Gioca!
         </Button>

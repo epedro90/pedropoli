@@ -7,6 +7,11 @@ import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import PlayerSetup from '../../components/PlayerSetup'
 import styles from './Completamento.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'completamento')!
 
 
 const DEFAULT_CONFIG: CompletamentoConfig = {
@@ -35,6 +40,8 @@ export default function Completamento() {
   const revealRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const { onTick } = useCountdownSound()
 
+  const [awaitingStart, setAwaitingStart] = useState(false)
+
   const startGame = () => {
     const qs = getShuffledQuestions(config.maxQuestions)
     setQuestions(qs)
@@ -44,9 +51,10 @@ export default function Completamento() {
     setCurrentPlayerIdx(0)
     setQuestionIndex(0)
     setRevealedIndexes([])
-    setTimerRunning(true)
+    setTimerRunning(false)
     setPaused(false)
     setLastCorrectPlayer(null)
+    setAwaitingStart(true)
     setPhase('playing')
   }
 
@@ -189,11 +197,7 @@ export default function Completamento() {
   /* ===== SETUP ===== */
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>🔤 Completamento</h1>
-          <p className={styles.gameSub}>Indovina la parola nascosta</p>
+      <GameSetupLayout game={GAME_INFO}>
 
           <div className={styles.section}>
             <label className={styles.label}>⏱ Tempo per giocatore (secondi)</label>
@@ -230,8 +234,7 @@ export default function Completamento() {
           <Button variant="success" size="xl" fullWidth glow onClick={startGame}>
             🔤 Inizia il Gioco!
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -267,10 +270,13 @@ export default function Completamento() {
 
   /* ===== PLAYING ===== */
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home?')) navigate('/') }}
+      currentLabel={activePlayer?.name}
+    >
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home?')) navigate('/') }}>← Home</button>
           <ScoreBoard
             players={scorePlayers}
             accentColor="var(--green)"
@@ -280,6 +286,20 @@ export default function Completamento() {
         </aside>
 
         <div className={styles.gameMain}>
+          {awaitingStart ? (
+            <div className={styles.readyBox}>
+              <p className={styles.readyLabel}>Tutti pronti?</p>
+              <h2 className={styles.readyPlayer}>Inizia il gioco</h2>
+              <p className={styles.readyHint}>
+                Le lettere si riveleranno con il tempo.<br />
+                Indovina prima che finisca il tuo cronometro!
+              </p>
+              <Button variant="success" size="xl" glow onClick={() => { setAwaitingStart(false); setTimerRunning(true) }}>
+                ▶ Inizia!
+              </Button>
+            </div>
+          ) : (
+          <>
           <div className={styles.playerBanner}>
             <span className={styles.playerBannerIcon}>🔤</span>
             <div>
@@ -327,8 +347,10 @@ export default function Completamento() {
               ↩ Annulla ultimo punto
             </Button>
           </div>
+          </>
+          )}
         </div>
       </div>
-    </div>
+    </GamePlayLayout>
   )
 }

@@ -1,0 +1,123 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Accent orb – picks up --game-accent */
+.orb {
+  position: fixed;
+  top: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  max-width: 600px;
+  max-height: 600px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--game-accent) 14%, transparent), transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-4%, 6%) scale(1.06); }
+}
+
+/* ─── Topbar ──────────────────────────────────────── */
+.topbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(5, 5, 5, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.back {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.4em 0.75em;
+  border-radius: 8px;
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.back:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gameTag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.gameEmoji {
+  font-size: 1.2rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--game-accent) 50%, transparent));
+}
+
+.gameName {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: var(--white);
+  letter-spacing: 0.02em;
+}
+
+.currentBadge {
+  background: color-mix(in srgb, var(--game-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--game-accent) 35%, transparent);
+  color: var(--white);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.4em 1em;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Progress bar ────────────────────────────────── */
+.progressTrack {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--game-accent, var(--cyan)), color-mix(in srgb, var(--game-accent) 60%, var(--cyan)));
+  transition: width 0.4s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ─── Content area ────────────────────────────────── */
+.content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

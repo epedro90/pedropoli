@@ -10,6 +10,11 @@ import { getVisibleClues, normalizeGuess, scoreForClues } from './logic'
 import { ChiSonoCard, ChiSonoConfig, ChiSonoPlayer, GamePhase } from './types'
 import styles from './ChiSono.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import GameSetupLayout from '../../components/GameSetupLayout'
+import GamePlayLayout from '../../components/GamePlayLayout'
+import { GAMES } from '../../types/game'
+
+const GAME_INFO = GAMES.find(g => g.id === 'chi-sono')!
 
 const DEFAULT_CONFIG: ChiSonoConfig = {
   players: ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'],
@@ -192,11 +197,7 @@ export default function ChiSono() {
   /* ===== SETUP ===== */
   if (phase === 'setup') {
     return (
-      <div className={styles.page}>
-        <div className={styles.setupCard}>
-          <button className={styles.back} onClick={() => navigate('/')}>← Home</button>
-          <h1 className={styles.gameTitle}>Chi Sono?</h1>
-          <p className={styles.gameSub}>Indovina dal minor numero di indizi possibile</p>
+      <GameSetupLayout game={GAME_INFO}>
 
           <div className={styles.section}>
             <label className={styles.label}>⏱ Tempo per turno (secondi)</label>
@@ -269,8 +270,7 @@ export default function ChiSono() {
           <Button variant="success" size="xl" fullWidth glow onClick={startGame}>
             ▶ Inizia la Sfida
           </Button>
-        </div>
-      </div>
+      </GameSetupLayout>
     )
   }
 
@@ -312,12 +312,13 @@ export default function ChiSono() {
 
   /* ===== PLAYING ===== */
   return (
-    <div className={styles.page}>
+    <GamePlayLayout
+      game={GAME_INFO}
+      onBack={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}
+      currentLabel={activePlayer?.name}
+    >
       <div className={styles.gameLayout}>
         <aside className={styles.sidebar}>
-          <button className={styles.back} onClick={() => { if (confirm('Tornare alla home? La partita verrà persa.')) navigate('/') }}>
-            ← Home
-          </button>
           <ScoreBoard players={scorePlayers} accentColor="var(--yellow)" title="Classifica" />
           <div className={styles.turnInfo}>
             <span className={styles.turnLabel}>Turno</span>
@@ -430,7 +431,7 @@ export default function ChiSono() {
           )}
         </div>
       </div>
-    </div>
+    </GamePlayLayout>
   )
 }
 

@@ -27,15 +27,15 @@
 .num {
   font-family: var(--font-display);
   font-size: 0.85rem;
-  color: var(--blue-electric);
+  color: var(--cyan);
   min-width: 20px;
   text-align: center;
 }
 
 .input {
   flex: 1;
-  background: rgba(6, 20, 46, 0.8);
-  border: 1.5px solid rgba(0, 170, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: var(--radius-sm);
   color: var(--white);
   font-family: var(--font-main);
@@ -47,12 +47,13 @@
 }
 
 .input:focus {
-  border-color: var(--blue-electric);
-  box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(0, 120, 212, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
 }
 
 .input::placeholder {
-  color: rgba(148, 163, 184, 0.5);
+  color: rgba(176, 176, 176, 0.4);
 }
 
 .remove {
@@ -64,12 +65,12 @@
   padding: 0.2em 0.4em;
   border-radius: 4px;
   transition: var(--transition);
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .remove:hover {
   opacity: 1;
-  background: rgba(239, 71, 111, 0.1);
+  background: rgba(255, 68, 68, 0.1);
 }
 
 .addRow {
