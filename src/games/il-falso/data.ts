@@ -6,7 +6,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'L Italia si trova in Europa',
       'Il Nilo attraversa l Egitto',
-      'La capitale della Spagna e Torino',
+      'La capitale della Spagna e Barcellona',
       'L Australia e sia un paese che un continente',
     ],
     falseIndex: 2,
@@ -26,7 +26,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Nel calcio una squadra gioca con undici giocatori',
       'Nel tennis si usa la racchetta',
-      'Nel basket si segna nel pugno',
+      'Nel basket il canestro vale sempre tre punti',
       'Nel nuoto si gareggia in vasca o in mare aperto',
     ],
     falseIndex: 2,
@@ -46,7 +46,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'I Beatles sono un gruppo di Liverpool',
       'Il pianoforte ha tasti bianchi e neri',
-      'La chitarra si suona con i piedi',
+      'La chitarra elettrica si suona senza amplificazione',
       'Sanremo e un festival della canzone italiana',
     ],
     falseIndex: 2,
@@ -56,7 +56,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Napoleone fu un imperatore francese',
       'Cristoforo Colombo navigo verso il Nuovo Mondo',
-      'L antica Roma fu fondata nel 1950',
+      'L antica Roma nacque nel Medioevo',
       'Il Colosseo si trova a Roma',
     ],
     falseIndex: 2,
@@ -66,7 +66,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Le api producono miele',
       'Gli alberi assorbono anidride carbonica',
-      'I pinguini vivono solo nel deserto del Sahara',
+      'I pinguini vivono soprattutto nell emisfero nord',
       'Le stelle marine sono animali marini',
     ],
     falseIndex: 2,
@@ -76,7 +76,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Lo smartphone puo collegarsi a internet',
       'Un computer ha bisogno di energia per funzionare',
-      'Il Bluetooth serve a cuocere il riso',
+      'Il Bluetooth funziona solo con una connessione via cavo',
       'La tastiera e un dispositivo di input',
     ],
     falseIndex: 2,
@@ -86,7 +86,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'La carbonara e un piatto di pasta',
       'La pizza margherita ha pomodoro e mozzarella',
-      'Il tiramisu si prepara con il cemento',
+      'Il tiramisu nasce come piatto salato',
       'Il gelato si serve spesso freddo',
     ],
     falseIndex: 2,
@@ -116,7 +116,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il calcio e lo sport piu seguito in Italia',
       'Il rugby si gioca con una palla ovale',
-      'La Formula 1 si disputa a piedi scalzi',
+      'La Formula 1 si corre su piste sterrate',
       'Nel tennis si possono giocare singolo e doppio',
     ],
     falseIndex: 2,
@@ -126,7 +126,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il Signore degli Anelli e tratto da Tolkien',
       'Harry Potter e una saga letteraria e cinematografica',
-      'Il film Joker parla di una lavatrice parlante',
+      'Il film Joker racconta la storia di un comico fallito',
       'Pixar e famosa per film di animazione',
     ],
     falseIndex: 2,
@@ -136,7 +136,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Michael Jackson e stato chiamato il Re del Pop',
       'Il sax e uno strumento a fiato',
-      'La batteria si suona con il telecomando',
+      'La batteria si suona con le corde',
       'Vasco Rossi e un cantante italiano',
     ],
     falseIndex: 2,
@@ -156,7 +156,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Le giraffe hanno il collo lungo',
       'I cactus sono piante adattate ai climi secchi',
-      'Le balene sono insetti volanti',
+      'Le balene sono pesci con le branchie',
       'La lavanda e spesso viola',
     ],
     falseIndex: 2,
@@ -166,7 +166,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Internet collega milioni di dispositivi',
       'Le app si installano spesso da uno store digitale',
-      'Il monitor serve a tagliare il pane',
+      'Il monitor serve a registrare l audio',
       'La memoria archivia dati e file',
     ],
     falseIndex: 2,
@@ -176,7 +176,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il risotto usa il riso come base',
       'La mozzarella e un formaggio fresco',
-      'La maionese nasce direttamente sugli alberi',
+      'La maionese si prepara cuocendo le uova',
       'Il prosciutto e un salume',
     ],
     falseIndex: 2,
@@ -196,7 +196,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il cuore pompa il sangue',
       'I polmoni servono per respirare',
-      'Le ossa sono fatte di cioccolato',
+      'Le ossa sono fatte soprattutto di calcio',
       'Il cervello coordina molte funzioni del corpo',
     ],
     falseIndex: 2,
@@ -206,7 +206,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il ciclismo si pratica spesso su strada',
       'La pallavolo prevede una rete al centro',
-      'Il baseball si gioca con un cucchiaio',
+      'Il baseball si gioca con un pallone ovale',
       'La boxe si svolge sul ring',
     ],
     falseIndex: 2,
@@ -256,7 +256,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Nel calcio si gioca con un pallone',
       'Nel basket si usa il canestro',
-      'Nel tennis si indossa il casco obbligatorio',
+      'Nel tennis il punteggio si misura in metri',
       'La maratona e una gara di corsa',
     ],
     falseIndex: 2,
@@ -266,7 +266,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Titanic e un film famoso',
       'Star Wars ha ambientazione spaziale',
-      'I film muti parlano con i megafoni',
+      'I film muti usavano sempre il doppiaggio dal vivo',
       'Avatar usa effetti visivi spettacolari',
     ],
     falseIndex: 2,
@@ -286,7 +286,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Roma antica e stata un grande impero',
       'Cristoforo Colombo ha viaggiato verso l America',
-      'Napoleone era re dell Antartide',
+      'Napoleone governava senza esercito permanente',
       'Le piramidi si trovano in Egitto',
     ],
     falseIndex: 2,
@@ -296,7 +296,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Le api producono miele',
       'Gli alberi hanno foglie',
-      'I delfini sono pesci con le pinne di metallo',
+      'I delfini sono rettili con le branchie',
       'Le stelle marine vivono nel mare',
     ],
     falseIndex: 2,
@@ -306,7 +306,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Uno smartphone puo connettersi a internet',
       'Un computer esegue programmi',
-      'Il mouse serve a tagliare il pane',
+      'Il mouse serve a registrare l audio',
       'La tastiera invia input al pc',
     ],
     falseIndex: 2,
@@ -326,7 +326,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'La Gioconda e un quadro famoso',
       'Michelangelo ha scolpito il David',
-      'I musei espongono barche volanti',
+      'I musei espongono solo oggetti digitali',
       'Van Gogh e noto per i suoi dipinti',
     ],
     falseIndex: 2,
@@ -336,7 +336,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Le ossa sostengono il corpo',
       'La pelle ricopre il corpo',
-      'Lo stomaco digerisce con le scarpe',
+      'Lo stomaco digerisce grazie ai muscoli delle gambe',
       'I muscoli aiutano il movimento',
     ],
     falseIndex: 2,
@@ -346,7 +346,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Un romanzo puo raccontare una storia',
       'Le pagine di un libro si leggono',
-      'I libri servono per volare',
+      'I libri servono per ascoltare la musica',
       'Un autore scrive testi',
     ],
     falseIndex: 2,
@@ -486,7 +486,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Star Wars e ambientato nello spazio',
       'Il Signore degli Anelli e una saga fantasy',
-      'I Minions parlano solo latino classico',
+      'I Minions sono stati creati da George Lucas',
       'Il Padrino e un film di mafia molto famoso',
     ],
     falseIndex: 2,
@@ -496,7 +496,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'La chitarra ha corde',
       'La batteria ha tamburi e piatti',
-      'Il pianoforte si suona con le pinne',
+      'Il pianoforte si suona con un plettro',
       'La voce puo essere usata per cantare',
     ],
     falseIndex: 2,
@@ -507,7 +507,7 @@ export const CARDS: FalseCard[] = [
       'I Beatles sono un gruppo storico',
       'Sanremo e un festival italiano',
       'Il violino produce suono con l archetto',
-      'Un microfono serve a mettere in ordine i vestiti',
+      'Un microfono serve a proiettare immagini',
     ],
     falseIndex: 3,
   },
@@ -516,7 +516,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Un telefono puo mandare messaggi',
       'Un computer puo navigare sul web',
-      'Il bluetooth serve per spedire pacchi postali',
+      'Il bluetooth trasmette dati solo tramite cavo',
       'Una tastiera ha molti tasti',
     ],
     falseIndex: 2,
@@ -526,7 +526,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Internet collega molti dispositivi',
       'Uno smartphone ha uno schermo touch',
-      'La memoria RAM e una specie di frigo',
+      'La memoria RAM conserva i dati anche quando togli la corrente',
       'Un tablet e simile a un piccolo computer',
     ],
     falseIndex: 2,
@@ -536,7 +536,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'La pasta si cuoce in acqua',
       'La pizza puo avere pomodoro',
-      'Il sale rende dolci i limoni',
+      'Il sale rende dolci solo i cibi fritti',
       'Il gelato e spesso freddo',
     ],
     falseIndex: 2,
@@ -546,7 +546,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il riso e un cereale',
       'Il pane si impasta con farina',
-      'La maionese nasce direttamente sugli alberi',
+      'La maionese si prepara cuocendo le uova',
       'Il caffè si beve spesso caldo',
     ],
     falseIndex: 2,
@@ -556,7 +556,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Gli alberi producono ossigeno',
       'Le api impollinano i fiori',
-      'I pinguini vivono nel Sahara',
+      'I pinguini vivono soprattutto ai tropici',
       'Le montagne fanno parte del paesaggio',
     ],
     falseIndex: 2,
@@ -576,7 +576,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'L antica Roma era governata da imperatori',
       'Cristoforo Colombo viaggiava per mare',
-      'Napoleone era un astronauta',
+      'Napoleone governava senza esercito permanente',
       'Il Medioevo precede l epoca moderna',
     ],
     falseIndex: 2,
@@ -587,7 +587,7 @@ export const CARDS: FalseCard[] = [
       'Il Colosseo si trova a Roma',
       'La Rivoluzione francese inizio nel 1789',
       'Le piramidi di Giza sono in Egitto',
-      'Venezia e stata capitale del regno di Marte',
+      'Venezia e stata capitale del Regno d Italia',
     ],
     falseIndex: 3,
   },
@@ -686,7 +686,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Nel calcio si segna un gol',
       'Nel tennis si usa una racchetta',
-      'Nel nuoto si corre con le scarpe da ginnastica',
+      'Nel nuoto si corre sulla pista',
       'La boxe si svolge sul ring',
     ],
     falseIndex: 2,
@@ -707,7 +707,7 @@ export const CARDS: FalseCard[] = [
       'Titanic racconta un viaggio in nave',
       'Star Wars e una saga spaziale',
       'I film Pixar sono noti per l animazione',
-      'I Minions parlano solo in latino classico',
+      'I Minions sono stati creati da Christopher Nolan',
     ],
     falseIndex: 3,
   },
@@ -717,7 +717,7 @@ export const CARDS: FalseCard[] = [
       'Batman e un personaggio dei fumetti',
       'Avatar usa effetti visivi molto noti',
       'Harry Potter parla di una scuola di magia',
-      'Il Padrino e una commedia romantica',
+      'Il Padrino e un documentario sportivo',
     ],
     falseIndex: 3,
   },
@@ -726,7 +726,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'La chitarra ha corde',
       'Il pianoforte ha tasti',
-      'La batteria si suona con i piedi soltanto',
+      'La batteria si suona con le corde',
       'La voce puo essere usata per cantare',
     ],
     falseIndex: 2,
@@ -737,7 +737,7 @@ export const CARDS: FalseCard[] = [
       'Queen e un gruppo britannico',
       'I Beatles hanno fatto la storia del rock',
       'Sanremo e un festival italiano',
-      'Un microfono serve a mettere in ordine i vestiti',
+      'Un microfono serve a lucidare i piatti',
     ],
     falseIndex: 3,
   },
@@ -747,7 +747,7 @@ export const CARDS: FalseCard[] = [
       'Un computer puo navigare sul web',
       'Uno smartphone serve per molte app',
       'La tastiera si usa per scrivere',
-      'Il bluetooth cuoce il riso velocemente',
+      'Il bluetooth funziona solo se il telefono e spento',
     ],
     falseIndex: 3,
   },
@@ -757,7 +757,7 @@ export const CARDS: FalseCard[] = [
       'Internet collega molti dispositivi',
       'Il tablet ha uno schermo touch',
       'La memoria RAM aiuta le prestazioni',
-      'Una stampante 3D stampa con il sole',
+      'Una stampante 3D stampa solo fotografie',
     ],
     falseIndex: 3,
   },
@@ -767,7 +767,7 @@ export const CARDS: FalseCard[] = [
       'La pasta si cuoce in acqua',
       'La pizza puo avere pomodoro e mozzarella',
       'Il tiramisu e un dolce italiano',
-      'Il sale rende dolci le fragole',
+      'Il sale rende dolci soltanto i piatti caldi',
     ],
     falseIndex: 3,
   },
@@ -776,7 +776,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Il riso e un cereale',
       'Il pane si impasta con farina',
-      'La maionese nasce sugli alberi',
+      'La maionese si prepara cuocendo olio e uova',
       'Il caffe si beve spesso caldo',
     ],
     falseIndex: 2,
@@ -786,7 +786,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Gli alberi producono ossigeno',
       'Le api aiutano l impollinazione',
-      'I pinguini vivono solo nel deserto',
+      'I pinguini vivono soprattutto nell emisfero nord',
       'La neve e acqua congelata',
     ],
     falseIndex: 2,
@@ -806,7 +806,7 @@ export const CARDS: FalseCard[] = [
     statements: [
       'Roma antica e stata un grande impero',
       'Cristoforo Colombo ha viaggiato verso l America',
-      'Napoleone era un astronauta',
+      'Napoleone era un medico di corte',
       'Il Medioevo precede l epoca moderna',
     ],
     falseIndex: 2,
@@ -817,7 +817,7 @@ export const CARDS: FalseCard[] = [
       'Il Colosseo si trova a Roma',
       'La Rivoluzione francese inizio nel 1789',
       'Le piramidi di Giza sono in Egitto',
-      'Venezia e stata capitale del regno di Marte',
+      'Venezia e stata capitale del Regno d Italia',
     ],
     falseIndex: 3,
   },
