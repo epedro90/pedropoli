@@ -5,6 +5,7 @@ import Completamento from './completamento/Completamento'
 import ChiSono from './chi-sono/ChiSono'
 import TabooSprint from './taboo-sprint/TabooSprint'
 import IlFalso from './il-falso/IlFalso'
+import PedroFeud from './pedro-feud/PedroFeud'
 import { GAMES, type GameId } from '../types/game'
 
 const GAME_COMPONENTS: Record<GameId, ComponentType> = {
@@ -14,6 +15,7 @@ const GAME_COMPONENTS: Record<GameId, ComponentType> = {
   'chi-sono': ChiSono,
   'taboo-sprint': TabooSprint,
   'il-falso': IlFalso,
+  'pedro-feud': PedroFeud,
 }
 
 export const GAME_ROUTES = GAMES.map(game => ({

@@ -1,4 +1,4 @@
-export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento' | 'chi-sono' | 'taboo-sprint' | 'il-falso'
+export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento' | 'chi-sono' | 'taboo-sprint' | 'il-falso' | 'pedro-feud'
 
 export interface GameDefinition {
   id: GameId
@@ -85,5 +85,17 @@ export const GAMES: GameDefinition[] = [
     emoji: '🕵️',
     players: '2-8 giocatori',
     difficulty: 'Medio',
+  },
+  {
+    id: 'pedro-feud',
+    title: 'Pedro Feud',
+    subtitle: 'Il survey game del Pedropoli',
+    description: 'Due squadre si sfidano su 15 turni.',
+    route: '/pedro-feud',
+    accentColor: '#f59e0b',
+    secondaryColor: '#ef4444',
+    emoji: '🎙',
+    players: '2 squadre',
+    difficulty: 'Facile',
   },
 ]
