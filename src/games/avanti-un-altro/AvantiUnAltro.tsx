@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect } from 'react'
+import { useReducer, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GamePhase, AvantiConfig, PlayerResult } from './types'
 import { getShuffledQuestions } from './data'
@@ -9,6 +9,9 @@ import styles from './AvantiUnAltro.module.css'
 import PlayerSetup from '../../components/PlayerSetup'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'avanti-un-altro')!
@@ -110,6 +113,8 @@ export default function AvantiUnAltro() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const feedbackTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
 
   const startGame = () => {
     feedbackTimer.clear()
@@ -136,24 +141,30 @@ export default function AvantiUnAltro() {
   const handleAnswer = useCallback((choice: 'A' | 'B') => {
     if (!state.timerRunning || state.feedback) return
     const q = state.questions[state.questionIndex]
+    if (!q) return
     const isWrong = isWrongAnswer(choice, q.correctAnswer)
+    const currentQuestionIndex = state.questionIndex
 
     if (isWrong) {
+      play('success')
       dispatch({ type: 'SET_FEEDBACK', feedback: 'wrong' })
+      feedbackTimer.clear()
       feedbackTimer.set(() => {
-        if (state.questionIndex + 1 >= config.questionsCount) {
+        if (currentQuestionIndex + 1 >= config.questionsCount) {
           completePlayer(true)
         } else {
           dispatch({ type: 'NEXT_QUESTION' })
         }
       }, 600)
     } else {
+      play('error')
       dispatch({ type: 'SET_FEEDBACK', feedback: 'correct' })
+      feedbackTimer.clear()
       feedbackTimer.set(() => {
         dispatch({ type: 'RESET_QUESTION' })
       }, 900)
     }
-  }, [completePlayer, config.questionsCount, feedbackTimer, state.feedback, state.questionIndex, state.questions, state.timerRunning])
+  }, [completePlayer, config.questionsCount, feedbackTimer, play, state.feedback, state.questionIndex, state.questions, state.timerRunning])
 
   const handleTimeUp = useCallback(() => {
     feedbackTimer.clear()
@@ -172,9 +183,17 @@ export default function AvantiUnAltro() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [state.feedback, handleAnswer, state.timerRunning])
 
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
+
   const currentQ = state.questions[state.questionIndex]
   const currentPlayer = config.players[state.playerIndex]
-  const progress = (state.questionIndex / config.questionsCount) * 100
+  const progress = Math.min(100, (state.questionIndex / config.questionsCount) * 100)
 
   /* ===== SETUP ===== */
   if (phase === 'setup') {
@@ -233,6 +252,7 @@ export default function AvantiUnAltro() {
 
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE!</h1>
@@ -252,6 +272,19 @@ export default function AvantiUnAltro() {
               </div>
             ))}
           </div>
+
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner.name,
+            winnerScore: winner.completed ? winner.timeUsed : winner.maxQuestion,
+            scoreUnit: winner.completed ? 's' : 'D.',
+            subtitle: winner.completed ? 'Completato!' : `Arrivato alla domanda ${winner.maxQuestion}`,
+            players: rankResults(state.results).map(r => ({
+              name: r.name,
+              score: r.completed ? r.timeUsed : r.maxQuestion,
+              meta: r.completed ? `✅ ${r.timeUsed}s` : `❌ Q.${r.maxQuestion}`,
+            })),
+          }} />
 
           <div className={styles.resultsBtns}>
             <Button variant="warning" size="lg" onClick={startGame}>🔄 Rigioca</Button>

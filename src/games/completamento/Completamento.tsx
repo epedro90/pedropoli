@@ -7,8 +7,12 @@ import ScoreBoard, { Player } from '../../components/ScoreBoard'
 import PlayerSetup from '../../components/PlayerSetup'
 import styles from './Completamento.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
+import { useSafeTimeout } from '../../hooks/useSafeTimeout'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'completamento')!
@@ -38,7 +42,10 @@ export default function Completamento() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const feedbackTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
 
   const [awaitingStart, setAwaitingStart] = useState(false)
 
@@ -63,6 +70,7 @@ export default function Completamento() {
   const advancePlayer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     if (revealRef.current) clearInterval(revealRef.current)
+    feedbackTimer.clear()
     setFeedback(null)
     setRevealedIndexes([])
 
@@ -85,7 +93,7 @@ export default function Completamento() {
 
     setCurrentPlayerIdx(nextIdx)
     setQuestionIndex(qi => qi + 1)
-  }, [currentPlayerIdx, players])
+  }, [currentPlayerIdx, feedbackTimer, players])
 
   const getRevealableIndexes = useCallback((word: string) => {
     return word
@@ -137,6 +145,14 @@ export default function Completamento() {
     }
   }, [players, currentPlayerIdx, timerRunning, advancePlayer])
 
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
+
   // Letter reveal interval
   useEffect(() => {
     if (!timerRunning || paused) {
@@ -156,12 +172,14 @@ export default function Completamento() {
   }, [timerRunning, paused, questionIndex, questions, config.revealInterval, getRevealableIndexes])
 
   const handleCorrect = () => {
+    play('success')
     setFeedback('correct')
     setLastCorrectPlayer(currentPlayerIdx)
     setPlayers(prev => prev.map((p, i) =>
       i === currentPlayerIdx ? { ...p, score: p.score + 1 } : p
     ))
-    setTimeout(() => {
+    feedbackTimer.clear()
+    feedbackTimer.set(() => {
       setFeedback(null)
       advancePlayer()
     }, 700)
@@ -176,8 +194,10 @@ export default function Completamento() {
   }
 
   const handleSkip = () => {
+    play('click')
+    feedbackTimer.clear()
     setFeedback('skip')
-    setTimeout(() => {
+    feedbackTimer.set(() => {
       setFeedback(null)
       advancePlayer()
     }, 500)
@@ -244,6 +264,7 @@ export default function Completamento() {
     const winner = sorted[0]
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE!</h1>
@@ -259,6 +280,18 @@ export default function Completamento() {
               </div>
             ))}
           </div>
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner.name,
+            winnerScore: winner.score,
+            scoreUnit: 'pt',
+            players: sorted.map(p => ({
+              name: p.name,
+              score: p.score,
+              meta: p.isEliminated ? '❌ eliminato' : undefined,
+            })),
+          }} />
+
           <div className={styles.resultsBtns}>
             <Button variant="success" size="lg" onClick={startGame}>🔄 Rigioca</Button>
             <Button variant="ghost" size="lg" onClick={() => navigate('/')}>🏠 Home</Button>
@@ -338,12 +371,12 @@ export default function Completamento() {
           </div>
 
           <div className={styles.actionGrid}>
-            <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
-            <Button variant="warning" size="lg" onClick={handleSkip}>⏭ Salta</Button>
-            <Button variant="ghost" size="lg" onClick={() => setPaused(p => !p)}>
+            <Button variant="success" size="xl" onClick={handleCorrect} aria-label="Corretta, aggiungi 1 punto">✅ Corretta +1</Button>
+            <Button variant="warning" size="lg" onClick={handleSkip} aria-label="Salta questa parola">⏭ Salta</Button>
+            <Button variant="ghost" size="lg" onClick={() => setPaused(p => !p)} aria-label={paused ? 'Riprendi timer' : 'Metti in pausa timer'}>
               {paused ? '▶ Riprendi' : '⏸ Pausa'}
             </Button>
-            <Button variant="danger" size="sm" onClick={handleUndo} disabled={lastCorrectPlayer === null}>
+            <Button variant="danger" size="sm" onClick={handleUndo} disabled={lastCorrectPlayer === null} aria-label="Annulla l'ultimo punto assegnato">
               ↩ Annulla ultimo punto
             </Button>
           </div>

@@ -1,6 +1,7 @@
-import type { FeudScenario } from './types'
+import type { FeudScenario, FeudGameState } from './types'
 
 const STORAGE_KEY = 'pedro-feud-custom-scenarios'
+const GAME_STATE_KEY = 'pedro-feud-game-state'
 
 export function loadCustomScenarios(): FeudScenario[] {
   try {
@@ -52,4 +53,22 @@ export function downloadJSON(data: unknown, filename: string): void {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+export function saveGameState(state: FeudGameState): void {
+  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state))
+}
+
+export function loadGameState(): FeudGameState | null {
+  try {
+    const raw = localStorage.getItem(GAME_STATE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as FeudGameState
+  } catch {
+    return null
+  }
+}
+
+export function clearGameState(): void {
+  localStorage.removeItem(GAME_STATE_KEY)
 }

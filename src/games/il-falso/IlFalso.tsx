@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
@@ -11,6 +11,9 @@ import styles from './IlFalso.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'il-falso')!
@@ -39,6 +42,8 @@ export default function IlFalso() {
   const feedbackTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
   const revealTimer = useSafeTimeout()
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
 
   const totalTurns = config.players.length * config.roundsPerPlayer
   const activePlayer = players[currentPlayerIdx]
@@ -116,8 +121,9 @@ export default function IlFalso() {
   }, [cardIndex, cards, currentPlayerIdx, feedbackTimer, players.length, revealTimer, totalTurns, turnIndex])
 
   const resolveCard = useCallback((isCorrect: boolean) => {
-    if (!currentCard || feedback) return
+    if (!currentCard || feedback || revealedAnswer) return
 
+    play(isCorrect ? 'success' : 'error')
     setPlayers(prev => prev.map((p, i) => (
       i === currentPlayerIdx
         ? {
@@ -152,19 +158,19 @@ export default function IlFalso() {
       }
       setCardIndex(prev => prev + 1)
     }, 800)
-  }, [cardIndex, cards.length, currentCard, currentPlayerIdx, feedback, feedbackTimer, finishTurn])
+  }, [cardIndex, cards.length, currentCard, currentPlayerIdx, feedback, feedbackTimer, finishTurn, play, revealedAnswer])
 
   const handleChoice = useCallback((index: number) => {
-    if (!currentCard || !timerRunning || feedback) return
+    if (!currentCard || !timerRunning || feedback || revealedAnswer) return
     resolveCard(index === currentCard.falseIndex)
-  }, [currentCard, feedback, resolveCard, timerRunning])
+  }, [currentCard, feedback, resolveCard, revealedAnswer, timerRunning])
 
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
-      if (!timerRunning || feedback || !currentCard) return
+      if (!timerRunning || feedback || revealedAnswer || !currentCard) return
 
       const choiceMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 }
       const selected = choiceMap[event.key.toLowerCase()]
@@ -173,7 +179,15 @@ export default function IlFalso() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentCard, feedback, handleChoice, timerRunning])
+  }, [currentCard, feedback, handleChoice, revealedAnswer, timerRunning])
+
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -258,6 +272,7 @@ export default function IlFalso() {
 
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE</h1>
@@ -274,6 +289,18 @@ export default function IlFalso() {
               </div>
             ))}
           </div>
+
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner?.name ?? '',
+            winnerScore: winner?.score ?? 0,
+            scoreUnit: 'pt',
+            players: sorted.map(p => ({
+              name: p.name,
+              score: p.score,
+              meta: `+${p.correct} / -${p.wrong}`,
+            })),
+          }} />
 
           <div className={styles.resultsBtns}>
             <Button variant="primary" size="lg" onClick={startGame}>🔄 Rigioca</Button>
@@ -328,6 +355,17 @@ export default function IlFalso() {
             <div className={styles.questionCard}>
               <p className={styles.questionLabel}>Prossimo turno</p>
               <h2 className={styles.questionText}>{activePlayer?.name}</h2>
+              {turnIndex > 0 && (
+                <div className={styles.readyScores}>
+                  {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                    <div key={p.id} className={[styles.readyScoreRow, p.id === activePlayer?.id ? styles.readyScoreActive : ''].filter(Boolean).join(' ')}>
+                      <span className={styles.readyScoreRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                      <span className={styles.readyScoreName}>{p.name}</span>
+                      <span className={styles.readyScoreVal}>{p.score} pt</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className={styles.startHint}>Premi il pulsante per iniziare il suo turno.</p>
               <div className={styles.waitActions}>
                 <Button variant="primary" size="xl" glow onClick={() => beginTurn(currentPlayerIdx, turnIndex)}>
@@ -356,7 +394,7 @@ export default function IlFalso() {
                       type="button"
                       className={styles.statementBtn}
                       onClick={() => handleChoice(idx)}
-                      disabled={!timerRunning || !!feedback}
+                      disabled={!timerRunning || !!feedback || !!revealedAnswer}
                     >
                       <span className={styles.statementBadge}>
                         {String.fromCharCode(65 + idx)}

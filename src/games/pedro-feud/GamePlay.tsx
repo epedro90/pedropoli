@@ -1,7 +1,14 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Button from '../../components/Button'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
+import { GAMES } from '../../types/game'
 import type { FeudScenario, FeudGameState, RoundWinner } from './types'
+import { saveGameState, loadGameState, clearGameState } from './storage'
 import styles from './GamePlay.module.css'
+
+const GAME_INFO = GAMES.find(g => g.id === 'pedro-feud')!
 
 interface Props {
   scenario: FeudScenario
@@ -25,16 +32,22 @@ function initState(scenario: FeudScenario): FeudGameState {
 
 export default function GamePlay({ scenario, onExit }: Props) {
   const totalRounds = scenario.rounds.length
-  const [state, setState] = useState<FeudGameState>(() => initState(scenario))
+  const [state, setState] = useState<FeudGameState>(() => {
+    const saved = loadGameState()
+    if (
+      saved &&
+      saved.scenarioId === scenario.id &&
+      saved.currentRoundIndex >= 0 &&
+      saved.currentRoundIndex < scenario.rounds.length
+    ) return saved
+    return initState(scenario)
+  })
   const [showResults, setShowResults] = useState(false)
   const [editingTeam, setEditingTeam] = useState<'team1' | 'team2' | null>(null)
   const team1InputRef = useRef<HTMLInputElement>(null)
   const team2InputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (editingTeam === 'team1') team1InputRef.current?.focus()
-    if (editingTeam === 'team2') team2InputRef.current?.focus()
-  }, [editingTeam])
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
 
   // ── derived state ──────────────────────────────────
   const roundIdx = state.currentRoundIndex
@@ -44,17 +57,36 @@ export default function GamePlay({ scenario, onExit }: Props) {
   const bonusRevealed = state.roundBonusRevealed[roundIdx] ?? false
   const currentWinner = state.roundWinners[roundIdx] ?? null
 
+  useEffect(() => {
+    if (editingTeam === 'team1') team1InputRef.current?.focus()
+    if (editingTeam === 'team2') team2InputRef.current?.focus()
+  }, [editingTeam])
+
+  useEffect(() => {
+    saveGameState(state)
+  }, [state])
+
+  useEffect(() => {
+    if (showResults && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (!showResults) applauseFiredRef.current = false
+  }, [showResults, play])
+
   // ── actions ────────────────────────────────────────
-  const toggleAnswer = (ansIdx: number) => {
+  const toggleAnswer = useCallback((ansIdx: number) => {
     setState(s => {
       const current = s.roundRevealedAnswers[s.currentRoundIndex]
         ?? scenario.rounds[s.currentRoundIndex].answers.map(() => false)
+      const wasRevealed = current[ansIdx] ?? false
+      if (!wasRevealed) play('reveal')
       const updated = current.map((v, i) => i === ansIdx ? !v : v)
       return { ...s, roundRevealedAnswers: { ...s.roundRevealedAnswers, [s.currentRoundIndex]: updated } }
     })
-  }
+  }, [play, scenario])
 
-  const revealAll = () => {
+  const revealAll = useCallback(() => {
     setState(s => ({
       ...s,
       roundRevealedAnswers: {
@@ -62,9 +94,9 @@ export default function GamePlay({ scenario, onExit }: Props) {
         [s.currentRoundIndex]: scenario.rounds[s.currentRoundIndex].answers.map(() => true),
       },
     }))
-  }
+  }, [scenario])
 
-  const hideAll = () => {
+  const hideAllAnswers = useCallback(() => {
     setState(s => ({
       ...s,
       roundRevealedAnswers: {
@@ -73,33 +105,35 @@ export default function GamePlay({ scenario, onExit }: Props) {
       },
       roundBonusRevealed: { ...s.roundBonusRevealed, [s.currentRoundIndex]: false },
     }))
-  }
+  }, [scenario])
 
-  const toggleBonus = () => {
+  const toggleBonus = useCallback(() => {
     setState(s => ({
       ...s,
       roundBonusRevealed: { ...s.roundBonusRevealed, [s.currentRoundIndex]: !(s.roundBonusRevealed[s.currentRoundIndex] ?? false) },
     }))
-  }
+  }, [])
 
-  const addError = () => {
+  const addError = useCallback(() => {
+    play('error')
     setState(s => ({
       ...s,
       roundErrors: { ...s.roundErrors, [s.currentRoundIndex]: Math.min(3, (s.roundErrors[s.currentRoundIndex] ?? 0) + 1) },
     }))
-  }
+  }, [play])
 
-  const removeError = () => {
+  const removeError = useCallback(() => {
     setState(s => ({
       ...s,
       roundErrors: { ...s.roundErrors, [s.currentRoundIndex]: Math.max(0, (s.roundErrors[s.currentRoundIndex] ?? 0) - 1) },
     }))
-  }
+  }, [])
 
-  const assignWinner = (team: 'team1' | 'team2') => {
+  const assignWinner = useCallback((team: 'team1' | 'team2') => {
     setState(s => {
       const prev: RoundWinner = s.roundWinners[s.currentRoundIndex] ?? null
       if (prev === team) return s
+      play('success')
       let t1 = s.team1Score
       let t2 = s.team2Score
       if (prev === 'team1') t1 = Math.max(0, t1 - 1)
@@ -108,7 +142,7 @@ export default function GamePlay({ scenario, onExit }: Props) {
       else t2++
       return { ...s, team1Score: t1, team2Score: t2, roundWinners: { ...s.roundWinners, [s.currentRoundIndex]: team } }
     })
-  }
+  }, [play])
 
   const cancelWinner = () => {
     setState(s => {
@@ -134,13 +168,13 @@ export default function GamePlay({ scenario, onExit }: Props) {
     setState(s => ({ ...s, currentRoundIndex: idx }))
   }
 
-  const nextRound = () => {
+  const nextRound = useCallback(() => {
     if (roundIdx < totalRounds - 1) goToRound(roundIdx + 1)
-  }
+  }, [roundIdx, totalRounds])
 
-  const prevRound = () => {
+  const prevRound = useCallback(() => {
     if (roundIdx > 0) goToRound(roundIdx - 1)
-  }
+  }, [roundIdx])
 
   const resetRound = () => {
     setState(s => ({
@@ -155,9 +189,52 @@ export default function GamePlay({ scenario, onExit }: Props) {
   }
 
   const restartGame = () => {
+    clearGameState()
     setState(initState(scenario))
     setShowResults(false)
   }
+
+  const handleExit = () => {
+    clearGameState()
+    onExit()
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showResults || editingTeam) return
+      const target = e.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+
+      const key = e.key.toLowerCase()
+
+      if (key === ' ') {
+        e.preventDefault()
+        const nextIdx = revealedAnswers.findIndex(v => !v)
+        if (nextIdx >= 0) toggleAnswer(nextIdx)
+      } else if (key === 'e') {
+        e.preventDefault()
+        addError()
+      } else if (key === 'r') {
+        e.preventDefault()
+        removeError()
+      } else if (key === 'arrowleft') {
+        e.preventDefault()
+        prevRound()
+      } else if (key === 'arrowright') {
+        e.preventDefault()
+        nextRound()
+      } else if (key === '1') {
+        e.preventDefault()
+        assignWinner('team1')
+      } else if (key === '2') {
+        e.preventDefault()
+        assignWinner('team2')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showResults, editingTeam, revealedAnswers, toggleAnswer, addError, removeError, prevRound, nextRound, assignWinner])
 
   const team1Winning = state.team1Score > state.team2Score
   const team2Winning = state.team2Score > state.team1Score
@@ -170,6 +247,7 @@ export default function GamePlay({ scenario, onExit }: Props) {
 
     return (
       <div className={styles.resultsPage}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.resultsEmoji}>{isDraw ? '🤝' : '🏆'}</div>
           {isDraw ? (
@@ -209,9 +287,20 @@ export default function GamePlay({ scenario, onExit }: Props) {
             })}
           </div>
 
+          <ShareResults data={{
+            gameName: `${GAME_INFO.title} — ${scenario.name}`,
+            winnerName: isDraw ? 'Pareggio' : winnerName,
+            winnerScore: isDraw ? undefined : winnerScore,
+            scoreUnit: 'pt',
+            players: [
+              { name: state.team1Name, score: state.team1Score },
+              { name: state.team2Name, score: state.team2Score },
+            ].sort((a, b) => b.score - a.score),
+          }} />
+
           <div className={styles.resultsBtns}>
             <Button variant="primary" size="lg" onClick={restartGame}>🔄 Rigioca</Button>
-            <Button variant="ghost" size="lg" onClick={onExit}>← Scenari</Button>
+            <Button variant="ghost" size="lg" onClick={handleExit}>← Scenari</Button>
           </div>
         </div>
       </div>
@@ -224,14 +313,22 @@ export default function GamePlay({ scenario, onExit }: Props) {
       {/* Top bar */}
       <div className={styles.topBar}>
         <button className={styles.exitBtn} onClick={() => {
-          if (confirm('Abbandonare la partita?')) onExit()
+          if (confirm('Abbandonare la partita?')) handleExit()
         }}>
           ← Scenari
         </button>
         <span className={styles.scenarioName}>{scenario.name}</span>
-        <span className={styles.roundBadge}>
-          Turno {roundIdx + 1} / {totalRounds}
-        </span>
+        <div className={styles.progressContainer}>
+          <div className={styles.progressBar}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${((roundIdx + 1) / totalRounds) * 100}%` }}
+            />
+          </div>
+          <span className={styles.progressText}>
+            {roundIdx + 1} / {totalRounds}
+          </span>
+        </div>
       </div>
 
       {/* Teams */}
@@ -264,7 +361,7 @@ export default function GamePlay({ scenario, onExit }: Props) {
               </>
             )}
           </div>
-          <div className={[styles.teamScore, styles.teamScore1].join(' ')}>{state.team1Score}</div>
+          <div key={state.team1Score} className={[styles.teamScore, styles.teamScore1].join(' ')}>{state.team1Score}</div>
         </div>
 
         {/* Team 2 */}
@@ -295,7 +392,7 @@ export default function GamePlay({ scenario, onExit }: Props) {
               </>
             )}
           </div>
-          <div className={[styles.teamScore, styles.teamScore2].join(' ')}>{state.team2Score}</div>
+          <div key={state.team2Score} className={[styles.teamScore, styles.teamScore2].join(' ')}>{state.team2Score}</div>
         </div>
       </div>
 
@@ -303,6 +400,28 @@ export default function GamePlay({ scenario, onExit }: Props) {
       <div className={styles.questionCard}>
         <div className={styles.questionLabel}>Domanda {roundIdx + 1}</div>
         <div className={styles.questionText}>{currentRound.question}</div>
+      </div>
+
+      {/* Round selector */}
+      <div className={styles.roundSelector}>
+        {scenario.rounds.map((_, i) => {
+          const isActive = i === roundIdx
+          const isCompleted = state.roundWinners[i] !== undefined && state.roundWinners[i] !== null
+          return (
+            <button
+              key={i}
+              className={[
+                styles.roundSelectorBtn,
+                isActive ? styles.roundSelectorBtnActive : '',
+                isCompleted && !isActive ? styles.roundSelectorBtnCompleted : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => goToRound(i)}
+              title={`Turno ${i + 1}`}
+            >
+              {i + 1}
+            </button>
+          )
+        })}
       </div>
 
       {/* Answer board */}
@@ -358,14 +477,17 @@ export default function GamePlay({ scenario, onExit }: Props) {
 
       {/* Controls */}
       <div className={styles.controls}>
-        <div className={styles.controlsTitle}>Controlli master</div>
+        <div className={styles.controlsTitle}>
+          <span>Controlli master</span>
+          <span className={styles.shortcutHint}>Shortcut: SPACE=rivela | E/R=errore | ←/→=turno | 1/2=vincitore</span>
+        </div>
 
         {/* Answers */}
         <div className={styles.controlRow}>
           <span className={styles.controlRowLabel}>Risposte</span>
           <div className={styles.controlRowBtns}>
             <button className={styles.winBtn} onClick={revealAll}>Rivela tutte</button>
-            <button className={styles.winBtn} onClick={hideAll}>Nascondi tutte</button>
+            <button className={styles.winBtn} onClick={hideAllAnswers}>Nascondi tutte</button>
           </div>
         </div>
 
@@ -434,7 +556,7 @@ export default function GamePlay({ scenario, onExit }: Props) {
             <Button variant="success" size="sm" onClick={() => setShowResults(true)}>
               Termina partita
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { if (confirm('Abbandonare la partita?')) onExit() }}>
+            <Button variant="ghost" size="sm" onClick={() => { if (confirm('Abbandonare la partita?')) handleExit() }}>
               ← Scenari
             </Button>
           </div>

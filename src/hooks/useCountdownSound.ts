@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react'
+import { isMuted } from './useSoundMuted'
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null
@@ -21,6 +22,7 @@ export function useCountdownSound(tickAt = 5) {
   }, [])
 
   const playTick = useCallback((isLast = false) => {
+    if (isMuted()) return
     const ctx = getCtx()
     if (!ctx) return
 

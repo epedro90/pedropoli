@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect } from 'react'
+import { useReducer, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GamePhase, Team, IntesaConfig, TurnState } from './types'
 import { getShuffledWords } from './data'
@@ -13,6 +13,9 @@ import styles from './IntesaVincente.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'intesa-vincente')!
@@ -121,7 +124,9 @@ export default function IntesaVincente() {
   })
   const wordAnimTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
+  const { play } = useSoundEffects()
   const modalTimer = useSafeTimeout()
+  const applauseFiredRef = useRef(false)
 
   const totalTurns = config.teams.length * ROUNDS
 
@@ -130,14 +135,14 @@ export default function IntesaVincente() {
     wordAnimTimer.set(() => dispatch({ type: 'SET_WORD_ANIM', anim: '' }), 400)
   }, [wordAnimTimer])
 
-  const endTurn = useCallback((nextWordIndex = state.turn.wordIndex) => {
+  const endTurn = useCallback((nextWordIndex?: number) => {
     modalTimer.clear()
     if (isLastTurn(state.turnsPlayed, totalTurns)) {
       setPhase('results')
       return
     }
     const nextTeamIndex = getNextTeamIndex(state.turn.teamIndex, config.teams.length)
-    dispatch({ type: 'END_TURN', nextTeamIndex, nextWordIndex, config })
+    dispatch({ type: 'END_TURN', nextTeamIndex, nextWordIndex: nextWordIndex ?? state.turn.wordIndex, config })
   }, [config, modalTimer, state.turn.teamIndex, state.turn.wordIndex, state.turnsPlayed, totalTurns])
 
   const startGame = () => {
@@ -156,21 +161,23 @@ export default function IntesaVincente() {
 
   const handleCorrect = useCallback(() => {
     if (!state.turn.timerRunning) return
+    play('success')
     animateWord('correct')
     dispatch({ type: 'SCORE_AND_NEXT', delta: 1, field: 'correctThisTurn' })
     dispatch({ type: 'SET_MODAL', modal: { open: true, type: 'success', title: '✅ Corretta! +1 punto', message: 'Ottimo! Prossima parola...' } })
     modalTimer.clear()
     modalTimer.set(() => dispatch({ type: 'CLOSE_MODAL' }), 1200)
-  }, [animateWord, modalTimer, state.turn.timerRunning])
+  }, [animateWord, modalTimer, play, state.turn.timerRunning])
 
   const handleError = useCallback(() => {
     if (!state.turn.timerRunning) return
+    play('error')
     animateWord('error')
     dispatch({ type: 'SCORE_AND_NEXT', delta: -1, field: 'penaltyThisTurn' })
     dispatch({ type: 'SET_MODAL', modal: { open: true, type: 'error', title: '❌ Penalità! −1 punto', message: 'Attenzione alle regole!' } })
     modalTimer.clear()
     modalTimer.set(() => dispatch({ type: 'CLOSE_MODAL' }), 1200)
-  }, [animateWord, modalTimer, state.turn.timerRunning])
+  }, [animateWord, modalTimer, play, state.turn.timerRunning])
 
   const handleSkip = useCallback(() => {
     if (!state.turn.timerRunning || state.turn.skipsLeft <= 0) return
@@ -199,6 +206,14 @@ export default function IntesaVincente() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleCorrect, handleError, handleSkip])
+
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
 
   const currentWord = state.words[state.turn.wordIndex] ?? '—'
   const currentTeam = state.teams[state.turn.teamIndex]
@@ -286,6 +301,7 @@ export default function IntesaVincente() {
     const sorted = [...state.teams].sort((a, b) => b.score - a.score)
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE!</h1>
@@ -301,6 +317,14 @@ export default function IntesaVincente() {
               </div>
             ))}
           </div>
+
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner?.name ?? '',
+            winnerScore: winner?.score,
+            scoreUnit: 'pt',
+            players: sorted.map(t => ({ name: t.name, score: t.score })),
+          }} />
 
           <div className={styles.resultsBtns}>
             <Button variant="primary" size="lg" onClick={startGame}>🔄 Rigioca</Button>
@@ -338,6 +362,17 @@ export default function IntesaVincente() {
             <div className={styles.readyBox}>
               <p className={styles.readyLabel}>Squadra di turno</p>
               <h2 className={styles.readyTeam}>{currentTeam?.name}</h2>
+              {state.turnsPlayed > 0 && (
+                <div className={styles.readyScores}>
+                  {[...state.teams].sort((a, b) => b.score - a.score).map((t, i) => (
+                    <div key={t.id} className={[styles.readyScoreRow, t.id === currentTeam?.id ? styles.readyScoreActive : ''].filter(Boolean).join(' ')}>
+                      <span className={styles.readyScoreRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
+                      <span className={styles.readyScoreName}>{t.name}</span>
+                      <span className={styles.readyScoreVal}>{t.score} pt</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className={styles.readyHint}>Premi Avvia quando tutti sono pronti. La parola apparirà allo start.</p>
               <Timer
                 duration={config.timerDuration}
@@ -391,10 +426,10 @@ export default function IntesaVincente() {
               </div>
 
               <div className={styles.actionGrid}>
-                <Button variant="success" size="xl" onClick={handleCorrect}>✅ Corretta +1</Button>
-                <Button variant="danger" size="xl" onClick={handleError}>❌ Penalità −1</Button>
-                <Button variant="warning" size="lg" onClick={handleSkip} disabled={state.turn.skipsLeft <= 0}>⏭ Passo ({state.turn.skipsLeft})</Button>
-                <Button variant="ghost" size="lg" onClick={() => dispatch({ type: 'TOGGLE_TIMER' })}>⏸ Pausa</Button>
+                <Button variant="success" size="xl" onClick={handleCorrect} aria-label="Corretta, aggiungi 1 punto">✅ Corretta +1</Button>
+                <Button variant="danger" size="xl" onClick={handleError} aria-label="Penalità, sottrai 1 punto">❌ Penalità −1</Button>
+                <Button variant="warning" size="lg" onClick={handleSkip} disabled={state.turn.skipsLeft <= 0} aria-label={`Passo, rimangono ${state.turn.skipsLeft} passi`}>⏭ Passo ({state.turn.skipsLeft})</Button>
+                <Button variant="ghost" size="lg" onClick={() => dispatch({ type: 'TOGGLE_TIMER' })} aria-label="Pausa timer">⏸ Pausa</Button>
               </div>
               <Button variant="outline" size="lg" fullWidth onClick={() => endTurn()}>🔁 Fine Turno</Button>
             </>

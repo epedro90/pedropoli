@@ -91,7 +91,7 @@ export default function ScenarioList({ onPlay, onEdit, onCreate, onBack }: Props
   const handleEdit = (scenario: FeudScenario) => {
     if (isBase(scenario.id)) {
       const copy: FeudScenario = {
-        ...JSON.parse(JSON.stringify(scenario)) as FeudScenario,
+        ...structuredClone(scenario) as FeudScenario,
         id: generateId(),
         name: `${scenario.name} (copia)`,
         createdAt: new Date().toISOString(),
@@ -105,7 +105,7 @@ export default function ScenarioList({ onPlay, onEdit, onCreate, onBack }: Props
 
   const handleDuplicate = (scenario: FeudScenario) => {
     const copy: FeudScenario = {
-      ...JSON.parse(JSON.stringify(scenario)) as FeudScenario,
+      ...structuredClone(scenario) as FeudScenario,
       id: generateId(),
       name: `${scenario.name} (copia)`,
       createdAt: new Date().toISOString(),
@@ -471,6 +471,7 @@ function parseSingleScenario(raw: unknown): FeudScenario {
     const rObj = r as Record<string, unknown>
     if (typeof rObj.question !== 'string' || !rObj.question.trim()) throw new Error(`Round ${i + 1}: la domanda è obbligatoria.`)
     if (!Array.isArray(rObj.answers)) throw new Error(`Round ${i + 1}: "answers" deve essere un array.`)
+    if (rObj.answers.length < 1 || rObj.answers.length > 8) throw new Error(`Round ${i + 1}: le risposte devono essere tra 1 e 8 (trovate: ${rObj.answers.length}).`)
     if (typeof rObj.bonusAnswer !== 'object' || rObj.bonusAnswer === null) throw new Error(`Round ${i + 1}: "bonusAnswer" mancante.`)
     const bonus = rObj.bonusAnswer as Record<string, unknown>
     if (typeof bonus.text !== 'string' || !bonus.text.trim()) throw new Error(`Round ${i + 1}: il testo della bonusAnswer è obbligatorio.`)

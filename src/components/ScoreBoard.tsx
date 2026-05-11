@@ -42,7 +42,7 @@ export default function ScoreBoard({ players, title = 'Punteggi', accentColor = 
                 ⏱ {p.timeLeft}s
               </span>
             )}
-            <span className={styles.score} style={{ color: accentColor }}>
+            <span key={p.score} className={styles.score} style={{ color: accentColor }}>
               {p.score}
               <span className={styles.pts}>pt</span>
             </span>

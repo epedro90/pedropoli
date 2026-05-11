@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
@@ -11,6 +11,9 @@ import styles from './TabooSprint.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'taboo-sprint')!
@@ -40,6 +43,8 @@ export default function TabooSprint() {
   const [totalTurns, setTotalTurns] = useState(0)
   const feedbackTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
   const activePlayer = players[currentPlayerIdx]
   const currentCard = cards[cardIndex]
 
@@ -49,20 +54,18 @@ export default function TabooSprint() {
     setSkipsLeft(config.maxSkips)
     setTimerRunning(false)
 
-    setTurnIndex(prev => {
-      const nextTurn = prev + 1
-      if (nextTurn >= totalTurns || cardIndex + 1 >= cards.length) {
-        setPhase('results')
-        return prev
-      }
+    const nextTurn = turnIndex + 1
+    if (nextTurn >= totalTurns || cardIndex + 1 >= cards.length) {
+      setPhase('results')
+      return
+    }
 
-      setCardIndex(prevCard => prevCard + 1)
-      setCurrentPlayerIdx(prevPlayer => (prevPlayer + 1) % players.length)
-      setTurnKey(prevKey => prevKey + 1)
-      setAwaitingStart(true)
-      return nextTurn
-    })
-  }, [cardIndex, cards.length, config.maxSkips, feedbackTimer, players.length, totalTurns])
+    setTurnIndex(nextTurn)
+    setCardIndex(prev => prev + 1)
+    setCurrentPlayerIdx(prev => (prev + 1) % players.length)
+    setTurnKey(prev => prev + 1)
+    setAwaitingStart(true)
+  }, [cardIndex, cards.length, config.maxSkips, feedbackTimer, players.length, totalTurns, turnIndex])
 
   const startGame = () => {
     feedbackTimer.clear()
@@ -117,6 +120,7 @@ export default function TabooSprint() {
 
   const handleCorrect = useCallback(() => {
     if (!currentCard || !timerRunning || feedback) return
+    play('success')
     resolveCard(
       'success',
       1,
@@ -125,10 +129,11 @@ export default function TabooSprint() {
       `${currentCard.answer} era la risposta giusta.`,
       850,
     )
-  }, [currentCard, feedback, resolveCard, timerRunning])
+  }, [currentCard, feedback, play, resolveCard, timerRunning])
 
   const handleTaboo = useCallback(() => {
     if (!currentCard || !timerRunning || feedback) return
+    play('error')
     resolveCard(
       'error',
       0,
@@ -137,10 +142,11 @@ export default function TabooSprint() {
       `Hai usato una parola vietata. La risposta era ${currentCard.answer}.`,
       850,
     )
-  }, [currentCard, feedback, resolveCard, timerRunning])
+  }, [currentCard, feedback, play, resolveCard, timerRunning])
 
   const handleSkip = useCallback(() => {
     if (!currentCard || !timerRunning || feedback || skipsLeft <= 0) return
+    play('click')
     setSkipsLeft(prev => prev - 1)
     resolveCard(
       'info',
@@ -150,7 +156,7 @@ export default function TabooSprint() {
       `Hai saltato ${currentCard.answer}.`,
       650,
     )
-  }, [currentCard, feedback, resolveCard, skipsLeft, timerRunning])
+  }, [currentCard, feedback, play, resolveCard, skipsLeft, timerRunning])
 
   const currentPoints = currentCard ? 1 : 0
 
@@ -158,6 +164,7 @@ export default function TabooSprint() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (phase !== 'playing' || awaitingStart) return
 
       if (event.key === '1') handleCorrect()
       if (event.key === '2') handleTaboo()
@@ -166,8 +173,16 @@ export default function TabooSprint() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleCorrect, handleSkip, handleTaboo])
+  }, [awaitingStart, handleCorrect, handleSkip, handleTaboo, phase])
 
+
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -267,6 +282,7 @@ export default function TabooSprint() {
 
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE</h1>
@@ -283,6 +299,18 @@ export default function TabooSprint() {
               </div>
             ))}
           </div>
+
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner?.name ?? '',
+            winnerScore: winner?.score ?? 0,
+            scoreUnit: 'pt',
+            players: sorted.map(p => ({
+              name: p.name,
+              score: p.score,
+              meta: `+${p.correct} / taboo ${p.tabooHits}`,
+            })),
+          }} />
 
           <div className={styles.resultsBtns}>
             <Button variant="warning" size="lg" onClick={startGame}>🔄 Rigioca</Button>
@@ -322,6 +350,17 @@ export default function TabooSprint() {
             <div className={styles.readyBox}>
               <p className={styles.readyLabel}>Turno {turnIndex + 1} / {totalTurns || 1}</p>
               <h2 className={styles.readyPlayer}>{activePlayer?.name}</h2>
+              {turnIndex > 0 && (
+                <div className={styles.readyScores}>
+                  {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                    <div key={p.id} className={[styles.readyScoreRow, p.id === activePlayer?.id ? styles.readyScoreActive : ''].filter(Boolean).join(' ')}>
+                      <span className={styles.readyScoreRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                      <span className={styles.readyScoreName}>{p.name}</span>
+                      <span className={styles.readyScoreVal}>{p.score} pt</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className={styles.readyHint}>
                 Fai indovinare la parola senza usare le parole vietate.<br />
                 La parola apparirà allo start.
@@ -389,16 +428,16 @@ export default function TabooSprint() {
               )}
 
               <div className={styles.guessActions}>
-                <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning || !!feedback}>
+                <Button variant="success" size="xl" type="button" onClick={handleCorrect} disabled={!timerRunning || !!feedback} aria-label="Parola indovinata, aggiungi punto">
                   ✅ Indovinata <span className={styles.keyHint}>[1]</span>
                 </Button>
-                <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning || !!feedback}>
+                <Button variant="danger" size="xl" type="button" onClick={handleTaboo} disabled={!timerRunning || !!feedback} aria-label="Parola taboo usata, penalità">
                   ❌ Taboo <span className={styles.keyHint}>[2]</span>
                 </Button>
-                <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0 || !!feedback}>
+                <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || skipsLeft <= 0 || !!feedback} aria-label={`Salta questa carta, rimangono ${skipsLeft} skip`}>
                   ⏭ Skip ({skipsLeft}) <span className={styles.keyHint}>[3]</span>
                 </Button>
-                <Button variant="ghost" size="lg" type="button" onClick={() => setTimerRunning(r => !r)}>
+                <Button variant="ghost" size="lg" type="button" onClick={() => setTimerRunning(r => !r)} aria-label={timerRunning ? 'Metti in pausa' : 'Riprendi timer'}>
                   {timerRunning ? '⏸ Pausa' : '▶ Riprendi'}
                 </Button>
               </div>

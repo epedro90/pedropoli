@@ -1,4 +1,4 @@
-﻿import { useCallback, useState, type FormEvent } from 'react'
+﻿import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import PlayerSetup from '../../components/PlayerSetup'
@@ -12,6 +12,9 @@ import styles from './ChiSono.module.css'
 import { useCountdownSound } from '../../hooks/useCountdownSound'
 import GameSetupLayout from '../../components/GameSetupLayout'
 import GamePlayLayout from '../../components/GamePlayLayout'
+import Confetti from '../../components/Confetti'
+import ShareResults from '../../components/ShareResults'
+import { useSoundEffects } from '../../hooks/useSoundEffects'
 import { GAMES } from '../../types/game'
 
 const GAME_INFO = GAMES.find(g => g.id === 'chi-sono')!
@@ -43,6 +46,8 @@ export default function ChiSono() {
   const [turnKey, setTurnKey] = useState(0)
   const feedbackTimer = useSafeTimeout()
   const { onTick } = useCountdownSound()
+  const { play } = useSoundEffects()
+  const applauseFiredRef = useRef(false)
 
   const totalTurns = config.players.length * config.roundsPerPlayer
   const activePlayer = players[currentPlayerIdx]
@@ -88,11 +93,11 @@ export default function ChiSono() {
 
   const finishTurn = useCallback(() => {
     feedbackTimer.clear()
+    setTimerRunning(false)
     setFeedback(null)
     setGuess('')
     setClueIndex(1)
     setSkipsLeft(config.maxSkips)
-    setTimerRunning(false)
 
     if (turnIndex + 1 >= totalTurns) {
       setAwaitingStart(false)
@@ -130,6 +135,7 @@ export default function ChiSono() {
 
   const handleCorrect = useCallback(() => {
     if (!currentCard) return
+    play('success')
     const points = scoreForClues(clueIndex, currentCard.clues.length)
     setPlayers(prev => prev.map((p, i) => (
       i === currentPlayerIdx
@@ -145,7 +151,7 @@ export default function ChiSono() {
     feedbackTimer.set(() => {
       advanceCard()
     }, 900)
-  }, [advanceCard, clueIndex, currentCard, currentPlayerIdx, feedbackTimer])
+  }, [advanceCard, clueIndex, currentCard, currentPlayerIdx, feedbackTimer, play])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -156,6 +162,7 @@ export default function ChiSono() {
       return
     }
 
+    play('error')
     if (clueIndex < currentCard.clues.length) {
       setClueIndex(prev => Math.min(prev + 1, currentCard.clues.length))
     }
@@ -186,6 +193,14 @@ export default function ChiSono() {
     }, 700)
   }
 
+
+  useEffect(() => {
+    if (phase === 'results' && !applauseFiredRef.current) {
+      applauseFiredRef.current = true
+      play('applause')
+    }
+    if (phase !== 'results') applauseFiredRef.current = false
+  }, [phase, play])
 
   const scorePlayers: Player[] = players.map(p => ({
     id: p.id,
@@ -281,6 +296,7 @@ export default function ChiSono() {
 
     return (
       <div className={styles.page}>
+        <Confetti />
         <div className={styles.resultsCard}>
           <div className={styles.winnerBadge}>🏆</div>
           <h1 className={styles.winnerTitle}>VINCITORE</h1>
@@ -297,6 +313,18 @@ export default function ChiSono() {
               </div>
             ))}
           </div>
+
+          <ShareResults data={{
+            gameName: GAME_INFO.title,
+            winnerName: winner?.name ?? '',
+            winnerScore: winner?.score ?? 0,
+            scoreUnit: 'pt',
+            players: sorted.map(p => ({
+              name: p.name,
+              score: p.score,
+              meta: `${p.solved} giuste`,
+            })),
+          }} />
 
           <div className={styles.resultsBtns}>
             <Button variant="success" size="lg" onClick={startGame}>🔄 Rigioca</Button>
@@ -362,6 +390,17 @@ export default function ChiSono() {
             <div className={styles.clueCard}>
               <p className={styles.clueTitle}>Prossimo turno</p>
               <h2 className={styles.answerMask}>{activePlayer?.name}</h2>
+              {turnIndex > 0 && (
+                <div className={styles.readyScores}>
+                  {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                    <div key={p.id} className={[styles.readyScoreRow, p.id === activePlayer?.id ? styles.readyScoreActive : ''].filter(Boolean).join(' ')}>
+                      <span className={styles.readyScoreRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                      <span className={styles.readyScoreName}>{p.name}</span>
+                      <span className={styles.readyScoreVal}>{p.score} pt</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className={styles.waitText}>Premi il pulsante per far partire il suo turno.</p>
               <div className={styles.waitActions}>
                 <Button
@@ -416,13 +455,13 @@ export default function ChiSono() {
                   disabled={!timerRunning || paused}
                 />
                 <div className={styles.guessActions}>
-                  <Button variant="success" size="xl" type="submit" disabled={!timerRunning || paused}>
+                  <Button variant="success" size="xl" type="submit" disabled={!timerRunning || paused} aria-label="Verifica la risposta inserita">
                     ✅ Verifica
                   </Button>
-                  <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || paused}>
+                  <Button variant="warning" size="xl" type="button" onClick={handleSkip} disabled={!timerRunning || paused} aria-label={`Salta questa carta, rimangono ${skipsLeft} skip`}>
                     ⏭ Passa ({skipsLeft})
                   </Button>
-                  <Button variant="ghost" size="lg" type="button" onClick={() => setPaused(p => !p)}>
+                  <Button variant="ghost" size="lg" type="button" onClick={() => setPaused(p => !p)} aria-label={paused ? 'Riprendi timer' : 'Metti in pausa timer'}>
                     {paused ? '▶ Riprendi' : '⏸ Pausa'}
                   </Button>
                 </div>
