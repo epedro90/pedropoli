@@ -1,0 +1,450 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  gap: 1.25rem;
+  overflow: hidden;
+}
+
+/* ── INTRO ──────────────────────────────────────────────── */
+
+.introCard {
+  background: rgba(26, 26, 26, 0.9);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.07);
+  animation: slide-in-up 0.4s ease-out;
+}
+
+.introEmoji {
+  font-size: 3rem;
+  animation: float 2.5s ease-in-out infinite;
+}
+
+.introTitle {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -0.02em;
+}
+
+.introSub {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.introDesc {
+  color: var(--gray);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.introDesc strong {
+  color: var(--white);
+}
+
+.bestScore {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1.25rem;
+  color: var(--yellow);
+  font-size: 0.9rem;
+}
+
+.startBtn {
+  background: linear-gradient(135deg, #0078d4, #00d4ff);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  font-family: var(--font-main);
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 0.85rem 2.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 6px 24px rgba(0, 120, 212, 0.4);
+  width: 100%;
+  max-width: 260px;
+}
+
+.startBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(0, 212, 255, 0.5);
+}
+
+.startBtn:active {
+  transform: translateY(0);
+}
+
+.backLink {
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.3em 0;
+  transition: var(--transition);
+}
+
+.backLink:hover { color: var(--cyan); }
+
+.ghostBtn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  color: var(--gray);
+  font-family: var(--font-main);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ghostBtn:hover { color: var(--white); border-color: rgba(255, 255, 255, 0.3); }
+
+/* ── COUNTDOWN ──────────────────────────────────────────── */
+
+.countdownBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.countdownNum {
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 20vw, 10rem);
+  font-weight: 900;
+  color: var(--cyan);
+  line-height: 1;
+  animation: timer-pulse 0.9s ease-in-out infinite;
+}
+
+.countdownLabel {
+  font-size: 1rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* ── GAMEOVER ───────────────────────────────────────────── */
+
+.gameoverCard {
+  background: rgba(26, 26, 26, 0.9);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.gameoverEmoji { font-size: 3.5rem; }
+
+.gameoverTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 900;
+  color: var(--white);
+}
+
+.gameoverScore {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.gameoverPrev { color: var(--gray); font-size: 0.9rem; }
+
+.gameoverBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* ── HUD ────────────────────────────────────────────────── */
+
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 320px;
+  padding: 0.65rem 1.25rem;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.hudItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  min-width: 44px;
+}
+
+.hudLives {
+  display: flex;
+  gap: 0.35rem;
+  font-size: 1.3rem;
+}
+
+.hudLabel {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray);
+}
+
+.hudVal {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--white);
+}
+
+.lifeOn { color: #ff4444; }
+.lifeOff { color: rgba(255, 255, 255, 0.1); }
+
+/* ── RING + BUTTON ──────────────────────────────────────── */
+
+.ringWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 280px;
+  height: 280px;
+}
+
+.ringSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Pulsante centrato nel ring (diametro = 2 * (RING_R - STROKE/2 - gap)) */
+/* RING_R = 120, gap visivo ~14px → bottone ~192px */
+.mainBtn {
+  position: absolute;
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 212, 255, 0.45);
+  background: radial-gradient(circle at 35% 35%, #1a3a5c, #0a1a2e);
+  color: var(--white);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow:
+    0 0 28px rgba(0, 212, 255, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.6),
+    inset 0 2px 6px rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: 1rem;
+}
+
+.mainBtn:hover:not(.btnDisabled) {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 46px rgba(0, 212, 255, 0.25),
+    0 10px 36px rgba(0, 0, 0, 0.6),
+    inset 0 2px 6px rgba(255, 255, 255, 0.1);
+}
+
+.mainBtn:active:not(.btnDisabled) { transform: scale(0.97); }
+
+.btnDisabled { cursor: default; }
+
+.btnPressed {
+  transform: scale(0.94) !important;
+  box-shadow:
+    0 0 18px rgba(0, 212, 255, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.7),
+    inset 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+}
+
+.btnShake {
+  animation: shake 0.4s ease-in-out;
+  border-color: var(--red) !important;
+  box-shadow: 0 0 30px rgba(255, 68, 68, 0.5) !important;
+}
+
+.btnGlow {
+  animation: success-pop 0.4s ease-out;
+  border-color: var(--green) !important;
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.6) !important;
+}
+
+.btnSuccess {
+  border-color: var(--green) !important;
+  background: radial-gradient(circle at 35% 35%, #1a4d2e, #0a2014) !important;
+}
+
+.btnError {
+  border-color: var(--red) !important;
+  background: radial-gradient(circle at 35% 35%, #4d1a1a, #200a0a) !important;
+}
+
+/* Varianti colore */
+.btnGreen  { background: radial-gradient(circle at 35% 35%, #1a5c2a, #0a2e12) !important; border-color: rgba(16, 185, 129, 0.6) !important; }
+.btnRed    { background: radial-gradient(circle at 35% 35%, #5c1a1a, #2e0a0a) !important; border-color: rgba(255, 68, 68, 0.6) !important; }
+.btnBlue   { background: radial-gradient(circle at 35% 35%, #1a2a5c, #0a122e) !important; border-color: rgba(37, 99, 235, 0.7) !important; }
+.btnYellow { background: radial-gradient(circle at 35% 35%, #5c4a1a, #2e240a) !important; border-color: rgba(251, 191, 36, 0.6) !important; }
+.btnPurple { background: radial-gradient(circle at 35% 35%, #3a1a5c, #1a0a2e) !important; border-color: rgba(168, 85, 247, 0.6) !important; }
+
+/* ── CONTENUTO DENTRO IL BOTTONE ────────────────────────── */
+
+.challengeInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  text-align: center;
+}
+
+.instruction {
+  font-size: clamp(0.78rem, 2.5vw, 0.95rem);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.35;
+  text-align: center;
+}
+
+.numberHint {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.memoryNum {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.4);
+  animation: timer-pulse 1.2s ease-in-out infinite;
+  line-height: 1;
+}
+
+.shapeHint {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.colorWord {
+  font-family: var(--font-display);
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── FEEDBACK DENTRO IL BOTTONE ─────────────────────────── */
+
+.feedbackInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.feedbackIcon {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.btnSuccess .feedbackIcon { color: var(--green); }
+.btnError .feedbackIcon   { color: var(--red); }
+
+.feedbackText {
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.3;
+}
+
+/* ── MEMORY TAG ─────────────────────────────────────────── */
+
+.memoryTag {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 1.1rem;
+  color: var(--yellow);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.memoryTag strong { color: var(--white); }
+
+/* ── KEYFRAMES ──────────────────────────────────────────── */
+
+@keyframes pop-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+
+@media (max-width: 400px) {
+  .ringWrap {
+    width: 240px;
+    height: 240px;
+  }
+
+  .mainBtn {
+    width: 164px;
+    height: 164px;
+  }
+
+  .page { gap: 1rem; }
+}

@@ -1,4 +1,4 @@
-export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento' | 'chi-sono' | 'taboo-sprint' | 'il-falso' | 'pedro-feud'
+export type GameId = 'intesa-vincente' | 'avanti-un-altro' | 'completamento' | 'chi-sono' | 'taboo-sprint' | 'il-falso' | 'pedro-feud' | 'pedro-button'
 
 export interface GameDefinition {
   id: GameId
@@ -97,5 +97,17 @@ export const GAMES: GameDefinition[] = [
     emoji: '🎙',
     players: '2 squadre',
     difficulty: 'Facile',
+  },
+  {
+    id: 'pedro-button',
+    title: 'Pedro Button',
+    subtitle: 'Premi. O non premere.',
+    description: 'Leggi l\'istruzione e decidi in pochi secondi. A volte devi premere, a volte devi resistere. Ogni errore costa una vita.',
+    route: '/pedro-button',
+    accentColor: '#00d4ff',
+    secondaryColor: '#0078d4',
+    emoji: '🔴',
+    players: '1 giocatore',
+    difficulty: 'Medio',
   },
 ]
